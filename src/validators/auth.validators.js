@@ -100,10 +100,22 @@ const resetPasswordValidator = () => {
   ];
 };
 
+const resendVerificationEmailValidator = () => {
+  return [
+    body("email")
+      .isEmail()
+      .withMessage("Invalid email format")
+      .notEmpty()
+      .withMessage("Email is required")
+      .trim(),
+  ];
+};
+
 export {
   userRegistrationValidator,
   userLoginValidator,
   emailVerificationValidator,
   forgotPasswordValidator,
   resetPasswordValidator,
+  resendVerificationEmailValidator,
 };

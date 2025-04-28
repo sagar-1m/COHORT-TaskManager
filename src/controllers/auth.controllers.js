@@ -382,7 +382,75 @@ const resetPassword = asyncHandler(async (req, res) => {
   }
 });
 
-const resendVerificationEmail = asyncHandler(async (req, res) => {});
+const resendVerificationEmail = asyncHandler(async (req, res) => {
+  // 1. Get email from request body
+  const { email } = req.body;
+
+  // 2. Validate email format
+  if (!email) {
+    throw new ApiError(400, "Email is required");
+  }
+
+  try {
+    // 3. Find user by email
+    const user = await User.findOne({
+      email: email.toLowerCase(),
+    });
+
+    // 4. If user not found or already verified, throw error
+    if (!user || user.isEmailVerified) {
+      throw new ApiError(400, "User not found or already verified");
+    }
+
+    // 5. Generate new email verification token
+    const { unhashedToken, hashedToken, tokenExpiry } =
+      user.generateTempToken();
+
+    // 6. Save token and expiry to user document
+    user.emailVerificationToken = hashedToken;
+    user.emailVerificationTokenExpiry = tokenExpiry;
+    await user.save({ validateBeforeSave: false });
+
+    // 7. Create verification URL
+    const verificationUrl = `${req.protocol}://${req.get("host")}/api/v1/auth/verify-email/${unhashedToken}`;
+
+    // 8. Send verification email
+    try {
+      await sendMail({
+        email: user.email,
+        subject: "Verify your email - Task Manager",
+        mailGenContent: emailVerificationMailGenContent(
+          user.username,
+          verificationUrl,
+        ),
+      });
+
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(
+            200,
+            "Verification email resent successfully. Please check your inbox.",
+          ),
+        );
+    } catch (error) {
+      // If email sending fails, remove the token and save the user document
+      user.emailVerificationToken = undefined;
+      user.emailVerificationTokenExpiry = undefined;
+      await user.save({ validateBeforeSave: false });
+
+      throw new ApiError(500, "Failed to send verification email");
+    }
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+
+    throw new ApiError(
+      error.statusCode || 500,
+      error.message ||
+        "Something went wrong while resending verification email",
+    );
+  }
+});
 
 const refreshAccessToken = asyncHandler(async (req, res) => {});
 

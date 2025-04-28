@@ -5,12 +5,14 @@ import {
   loginUser,
   logoutUser,
   registerUser,
+  resendVerificationEmail,
   resetPassword,
   VerifyEmail,
 } from "../controllers/auth.controllers.js";
 import {
   emailVerificationValidator,
   forgotPasswordValidator,
+  resendVerificationEmailValidator,
   resetPasswordValidator,
   userLoginValidator,
   userRegistrationValidator,
@@ -41,5 +43,9 @@ router
 router
   .route("/reset-password/:token")
   .post(resetPasswordValidator(), validate, resetPassword);
+
+router
+  .route("/resend-verification-email")
+  .post(resendVerificationEmailValidator(), validate, resendVerificationEmail);
 
 export default router;
