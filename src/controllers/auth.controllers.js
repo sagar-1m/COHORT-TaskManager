@@ -201,7 +201,7 @@ const logoutUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, "User logged out successfully"));
 });
 
-const VerifyEmail = asyncHandler(async (req, res) => {
+const verifyEmail = asyncHandler(async (req, res) => {
   // 1. Get verification token from request params
   const { token } = req.params;
 
@@ -662,7 +662,7 @@ export {
   loginUser,
   logoutUser,
   getUserProfile,
-  VerifyEmail,
+  verifyEmail,
   forgotPassword,
   resetPassword,
   resendVerificationEmail,

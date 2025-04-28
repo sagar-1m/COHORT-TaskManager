@@ -9,7 +9,7 @@ import {
   registerUser,
   resendVerificationEmail,
   resetPassword,
-  VerifyEmail,
+  verifyEmail,
 } from "../controllers/auth.controllers.js";
 import {
   deleteAccountValidator,
@@ -31,7 +31,7 @@ router
 
 router
   .route("/verify-email/:token")
-  .get(emailVerificationValidator(), validate, VerifyEmail);
+  .get(emailVerificationValidator(), validate, verifyEmail);
 
 router.route("/login").post(userLoginValidator(), validate, loginUser);
 
