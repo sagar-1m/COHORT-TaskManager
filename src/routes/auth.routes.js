@@ -1,15 +1,18 @@
 import { Router } from "express";
 import {
+  deleteUser,
   forgotPassword,
   getUserProfile,
   loginUser,
   logoutUser,
+  refreshAccessToken,
   registerUser,
   resendVerificationEmail,
   resetPassword,
   VerifyEmail,
 } from "../controllers/auth.controllers.js";
 import {
+  deleteAccountValidator,
   emailVerificationValidator,
   forgotPasswordValidator,
   resendVerificationEmailValidator,
@@ -47,5 +50,11 @@ router
 router
   .route("/resend-verification-email")
   .post(resendVerificationEmailValidator(), validate, resendVerificationEmail);
+
+router.route("/refresh-token").post(refreshAccessToken);
+
+router
+  .route("/delete-account")
+  .delete(authMiddleware, deleteAccountValidator(), validate, deleteUser);
 
 export default router;

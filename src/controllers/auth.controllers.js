@@ -2,6 +2,11 @@ import { asyncHandler } from "../utils/async-handler.js";
 import { ApiResponse } from "../utils/api-response.js";
 import { ApiError } from "../utils/api-error.js";
 import User from "../models/user.models.js";
+import Project from "../models/project.models.js";
+import ProjectMember from "../models/projectMember.models.js";
+import ProjectNote from "../models/note.models.js";
+import Task from "../models/task.models.js";
+import SubTask from "../models/subTask.models.js";
 import { UserRolesEnum } from "../utils/constants.js";
 import {
   sendMail,
@@ -9,6 +14,7 @@ import {
   passwordResetMailGenContent,
 } from "../utils/mail.js";
 import crypto from "crypto";
+import jwt from "jsonwebtoken";
 
 const registerUser = asyncHandler(async (req, res) => {
   // 1. Get user data from request body
@@ -452,9 +458,204 @@ const resendVerificationEmail = asyncHandler(async (req, res) => {
   }
 });
 
-const refreshAccessToken = asyncHandler(async (req, res) => {});
+const refreshAccessToken = asyncHandler(async (req, res) => {
+  // 1. Get refresh token from cookies
+  const incomingRefreshToken =
+    req.cookies?.refreshToken ||
+    req.header("Authorization")?.replace("Bearer ", "");
 
-const deleteUser = asyncHandler(async (req, res) => {});
+  // 2. Check if refresh token is present
+  if (!incomingRefreshToken) {
+    throw new ApiError(401, "Unauthorized access.");
+  }
+
+  try {
+    // 3. Verify the refresh token
+    const decodedToken = jwt.verify(
+      incomingRefreshToken,
+      process.env.REFRESH_TOKEN_SECRET,
+    );
+
+    // 4. Find user associated with the refresh token
+    const user = await User.findById(decodedToken?.id);
+
+    // 5. check if user exists
+    if (!user) {
+      throw new ApiError(401, "Unauthorized access. Login again.");
+    }
+
+    // 6. Check if refresh token in DB matches the incoming token
+    if (user.refreshToken !== incomingRefreshToken) {
+      throw new ApiError(401, "Unauthorized access. Login again.");
+    }
+
+    // 7. Generate new access and refresh tokens
+    const newAccessToken = user.generateAccessToken();
+    const newRefreshToken = user.generateRefreshToken();
+
+    // 8. Update refresh token in DB
+    user.refreshToken = newRefreshToken;
+    await user.save({ validateBeforeSave: false });
+
+    // 9. Set cookies options
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV !== "development" ? false : true,
+      sameSite: "strict",
+    };
+
+    // 10. Send response with new tokens in cookies
+    return res
+      .status(200)
+      .cookie("accessToken", newAccessToken, {
+        ...cookieOptions,
+        maxAge: 24 * 60 * 60 * 1000, // 1 day
+      })
+      .cookie("refreshToken", newRefreshToken, {
+        ...cookieOptions,
+        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+      })
+      .json(
+        new ApiResponse(200, "Access token refreshed successfully", {
+          accessToken: newAccessToken,
+        }),
+      );
+  } catch (error) {
+    // 11. Clear cookies on error
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV !== "development" ? false : true,
+      sameSite: "strict",
+    };
+
+    if (error instanceof jwt.TokenExpiredError) {
+      return res
+        .status(401)
+        .cookie("accessToken", "", { ...cookieOptions, expires: new Date(0) })
+        .cookie("refreshToken", "", { ...cookieOptions, expires: new Date(0) })
+        .json(new ApiResponse(401, "Refresh token expired. Login again."));
+    }
+    if (error instanceof jwt.JsonWebTokenError) {
+      return res
+        .status(401)
+        .cookie("accessToken", "", { ...cookieOptions, expires: new Date(0) })
+        .cookie("refreshToken", "", { ...cookieOptions, expires: new Date(0) })
+        .json(new ApiResponse(401, "Unauthorized access. Login again."));
+    }
+
+    if (error instanceof ApiError) throw error;
+
+    throw new ApiError(
+      error.statusCode || 500,
+      error.message || "Something went wrong while refreshing access token",
+    );
+  }
+});
+
+const deleteUser = asyncHandler(async (req, res) => {
+  // 1. Get user ID from request
+  const userId = req.user?._id;
+
+  // 2. Check if userId is valid
+  if (!userId) {
+    throw new ApiError(401, "Unauthorized access");
+  }
+
+  // 3. Get password from request body for extra security check
+  const { password } = req.body;
+
+  if (!password) {
+    throw new ApiError(400, "Password is required to delete account");
+  }
+
+  try {
+    // 4. Find the user by ID
+    const user = await User.findById(userId).select("+password");
+
+    // 5. If user not found, throw error
+    if (!user) {
+      throw new ApiError(404, "User not found");
+    }
+
+    // 6. Check if password is correct
+    const isPasswordMatch = await user.isPasswordMatch(password);
+    if (!isPasswordMatch) {
+      throw new ApiError(401, "Incorrect password");
+    }
+
+    // 7. Delete user's projects, tasks, and related data
+    // First, find all projects associated with the user
+    const projects = await Project.find({
+      createdBy: userId,
+    });
+
+    // Delete project member for each project
+    for (const project of projects) {
+      await ProjectMember.deleteMany({
+        projectId: project._id,
+      });
+
+      // Delete tasks associated with the project
+      const tasks = await Task.find({
+        projectId: project._id,
+      });
+      for (const task of tasks) {
+        await SubTask.deleteMany({
+          taskId: task._id,
+        });
+      }
+
+      // Delete all tasks
+      await Task.deleteMany({
+        projectId: project._id,
+      });
+
+      // Delete project notes
+      await ProjectNote.deleteMany({
+        projectId: project._id,
+      });
+    }
+
+    // Delete all projects
+    await Project.deleteMany({
+      createdBy: userId,
+    });
+
+    // remove user from all project memberships
+    await ProjectMember.deleteMany({
+      userId,
+    });
+
+    // Remove user from task assignments
+    await Task.updateMany(
+      { assignedTo: userId },
+      { $pull: { assignedTo: userId } },
+    );
+
+    // Finally, delete the user account
+    await User.findByIdAndDelete(userId);
+
+    // 8. Clear cookies
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV !== "development" ? false : true,
+    };
+
+    // 9. Send response with cleared cookies
+    return res
+      .status(200)
+      .cookie("accessToken", "", { ...cookieOptions, expires: new Date(0) })
+      .cookie("refreshToken", "", { ...cookieOptions, expires: new Date(0) })
+      .json(new ApiResponse(200, "User account deleted successfully"));
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+
+    throw new ApiError(
+      error.statusCode || 500,
+      error.message || "Something went wrong while deleting user account",
+    );
+  }
+});
 
 export {
   registerUser,

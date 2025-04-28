@@ -111,6 +111,21 @@ const resendVerificationEmailValidator = () => {
   ];
 };
 
+const deleteAccountValidator = () => {
+  return [
+    body("password")
+      .notEmpty()
+      .withMessage("Password is required")
+      .isLength({ min: 8 })
+      .withMessage("Password must be at least 8 characters long")
+      .matches(/\d/)
+      .withMessage("Password must contain at least one number")
+      .matches(/[a-zA-Z]/)
+      .withMessage("Password must contain at least one letter")
+      .trim(),
+  ];
+};
+
 export {
   userRegistrationValidator,
   userLoginValidator,
@@ -118,4 +133,5 @@ export {
   forgotPasswordValidator,
   resetPasswordValidator,
   resendVerificationEmailValidator,
+  deleteAccountValidator,
 };
