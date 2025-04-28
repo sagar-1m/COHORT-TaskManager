@@ -3,7 +3,11 @@ import { ApiResponse } from "../utils/api-response.js";
 import { ApiError } from "../utils/api-error.js";
 import User from "../models/user.models.js";
 import { UserRolesEnum } from "../utils/constants.js";
-import { sendMail, emailVerificationMailGenContent } from "../utils/mail.js";
+import {
+  sendMail,
+  emailVerificationMailGenContent,
+  passwordResetMailGenContent,
+} from "../utils/mail.js";
 import crypto from "crypto";
 
 const registerUser = asyncHandler(async (req, res) => {
@@ -191,8 +195,6 @@ const logoutUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, "User logged out successfully"));
 });
 
-const getUserProfile = asyncHandler(async (req, res) => {});
-
 const VerifyEmail = asyncHandler(async (req, res) => {
   // 1. Get verification token from request params
   const { token } = req.params;
@@ -224,9 +226,161 @@ const VerifyEmail = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, "Email verified successfully"));
 });
 
-const forgotPassword = asyncHandler(async (req, res) => {});
+const getUserProfile = asyncHandler(async (req, res) => {
+  // 1. Get user ID from request
+  const userId = req.user?._id;
 
-const resetPassword = asyncHandler(async (req, res) => {});
+  // 2. Check if userId is valid
+  if (!userId) {
+    throw new ApiError(401, "Unauthorized access");
+  }
+
+  try {
+    // 3. Find user by ID and exclude sensitive fields
+    const user = await User.findById(userId).select(
+      "-password -refreshToken -emailVerificationToken -emailVerificationTokenExpiry",
+    );
+
+    // 4. If user not found, throw error
+    if (!user) {
+      throw new ApiError(404, "User not found");
+    }
+
+    // 5. Send success response with user data
+    return res.status(200).json(
+      new ApiResponse(200, "User profile fetched successfully", {
+        user,
+      }),
+    );
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+
+    throw new ApiError(
+      error.statusCode || 500,
+      error.message || "Something went wrong while fetching user profile",
+    );
+  }
+});
+
+const forgotPassword = asyncHandler(async (req, res) => {
+  // 1. Get email from request body
+  const { email } = req.body;
+
+  // 2. Validate email format
+  if (!email) {
+    throw new ApiError(400, "Email is required");
+  }
+
+  try {
+    // 3. Find user by email
+    const user = await User.findOne({ email: email.toLowerCase() });
+
+    // 4. If user not found, still send success response to avoid email enumeration attack
+    if (!user) {
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(
+            200,
+            "If the email is registered, you will receive a password reset link shortly",
+          ),
+        );
+    }
+
+    // 5. Generate password reset token
+    const { unhashedToken, hashedToken, tokenExpiry } =
+      user.generateTempToken();
+
+    // 6. Save token and expiry to user document
+    user.forgotPasswordToken = hashedToken;
+    user.forgotPasswordTokenExpiry = tokenExpiry;
+    await user.save({ validateBeforeSave: false });
+
+    // 7. Create password reset URL
+    const resetUrl = `${req.protocol}://${req.get("host")}/api/v1/auth/reset-password/${unhashedToken}`;
+
+    // 8. Send password reset email
+    try {
+      await sendMail({
+        email: user.email,
+        subject: "Reset your password - Task Manager",
+        mailGenContent: passwordResetMailGenContent(user.username, resetUrl),
+      });
+
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(
+            200,
+            "Password reset email sent successfully. Please check your inbox.",
+          ),
+        );
+    } catch (error) {
+      // If email sending fails, remove the token and save the user document
+      user.forgotPasswordToken = undefined;
+      user.forgotPasswordTokenExpiry = undefined;
+      await user.save({ validateBeforeSave: false });
+
+      throw new ApiError(500, "Failed to send password reset email");
+    }
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+
+    throw new ApiError(
+      error.statusCode || 500,
+      error.message ||
+        "Something went wrong while sending password reset email",
+    );
+  }
+});
+
+const resetPassword = asyncHandler(async (req, res) => {
+  // 1. Get token from params and new password from request body
+  const { token } = req.params;
+  const { password, confirmPassword } = req.body;
+
+  try {
+    // 3. Hash the token for comparison with DB
+    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
+    // 4. Find user with the valid token that hasn't expired
+    const user = await User.findOne({
+      forgotPasswordToken: hashedToken,
+      forgotPasswordTokenExpiry: { $gt: Date.now() },
+    });
+
+    // 5. If user not found, throw error
+    if (!user) {
+      throw new ApiError(400, "Invalid or expired token");
+    }
+
+    // 6. Update password and clear token fields
+    user.password = password;
+    user.forgotPasswordToken = undefined;
+    user.forgotPasswordTokenExpiry = undefined;
+
+    user.refreshToken = undefined; // invalidate all active sessions
+
+    await user.save({ validateBeforeSave: false });
+
+    // 7. Send success response
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          "Password reset successfully. Please log in again.",
+        ),
+      );
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+
+    throw new ApiError(
+      error.statusCode || 500,
+      error.message || "Something went wrong while resetting password",
+    );
+  }
+});
 
 const resendVerificationEmail = asyncHandler(async (req, res) => {});
 

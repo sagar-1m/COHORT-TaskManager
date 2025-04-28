@@ -60,8 +60,50 @@ const emailVerificationValidator = () => {
   ];
 };
 
+const forgotPasswordValidator = () => {
+  return [
+    body("email")
+      .isEmail()
+      .withMessage("Invalid email format")
+      .notEmpty()
+      .withMessage("Email is required")
+      .trim(),
+  ];
+};
+
+const resetPasswordValidator = () => {
+  return [
+    param("token")
+      .notEmpty()
+      .withMessage("Reset token is required")
+      .isLength({ min: 32 })
+      .withMessage("Invalid reset token"),
+    body("password")
+      .notEmpty()
+      .withMessage("Password is required")
+      .isLength({ min: 8 })
+      .withMessage("Password must be at least 8 characters long")
+      .matches(/\d/)
+      .withMessage("Password must contain at least one number")
+      .matches(/[a-zA-Z]/)
+      .withMessage("Password must contain at least one letter")
+      .trim(),
+    body("confirmPassword")
+      .notEmpty()
+      .withMessage("Confirm password is required")
+      .custom((value, { req }) => {
+        if (value !== req.body.password) {
+          throw new Error("Passwords do not match");
+        }
+        return true;
+      }),
+  ];
+};
+
 export {
   userRegistrationValidator,
   userLoginValidator,
   emailVerificationValidator,
+  forgotPasswordValidator,
+  resetPasswordValidator,
 };
