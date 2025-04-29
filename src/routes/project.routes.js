@@ -11,6 +11,7 @@ import {
   addMemberToProject,
   createProject,
   getProjectMembers,
+  getProjects,
   updateMemberRole,
 } from "../controllers/project.controllers.js";
 
@@ -32,5 +33,7 @@ router
 router
   .route("/:projectId/members/:memberId/role")
   .patch(updateMemberRoleValidator(), validate, updateMemberRole);
+
+router.route("/get-projects").get(getProjects);
 
 export default router;

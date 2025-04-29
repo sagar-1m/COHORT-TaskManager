@@ -304,7 +304,58 @@ const updateMemberRole = asyncHandler(async (req, res) => {
   }
 });
 
-const getProjects = asyncHandler(async (req, res) => {});
+const getProjects = asyncHandler(async (req, res) => {
+  // 1. Get the authenticated user ID
+  const userId = req.user._id;
+
+  try {
+    // 2. Get all projects where the user is a member
+    const projectMemberships = await ProjectMember.find({
+      userId: userId,
+    }).populate({
+      path: "projectId",
+      select: "name description status priority tags createdBy",
+    });
+
+    // 3. Check if the user is a member of any projects
+    if (projectMemberships.length === 0) {
+      return res.status(200).json(
+        new ApiResponse(200, "No projects found", {
+          projects: [],
+          count: 0,
+        }),
+      );
+    }
+
+    // 4. Format the response data
+    const projects = projectMemberships.map((membership) => ({
+      _id: membership.projectId._id,
+      name: membership.projectId.name,
+      description: membership.projectId.description,
+      status: membership.projectId.status,
+      priority: membership.projectId.priority,
+      tags: membership.projectId.tags,
+      createdBy: membership.projectId.createdBy,
+      role: membership.role,
+      joinedAt: membership.createdAt,
+    }));
+
+    // 5. Return the list of projects
+    return res.status(200).json(
+      new ApiResponse(200, "Projects retrieved successfully", {
+        projects,
+        count: projects.length,
+      }),
+    );
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+
+    throw new ApiError(
+      error.statusCode || 500,
+      error.message || "Something went wrong",
+    );
+  }
+});
 
 const getProjectById = asyncHandler(async (req, res) => {});
 
