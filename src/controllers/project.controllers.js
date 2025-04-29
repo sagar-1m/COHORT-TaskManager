@@ -357,7 +357,59 @@ const getProjects = asyncHandler(async (req, res) => {
   }
 });
 
-const getProjectById = asyncHandler(async (req, res) => {});
+const getProjectById = asyncHandler(async (req, res) => {
+  // 1. Extract the project ID from the request params
+  const { projectId } = req.params;
+
+  // 2. Get the authenticated user ID
+  const userId = req.user._id;
+
+  try {
+    // 3. Check if the project exists
+    const project = await Project.findById(projectId);
+    if (!project) {
+      throw new ApiError(404, "Project not found");
+    }
+
+    // 4. Check if the user is a member of the project
+    const userMembership = await ProjectMember.findOne({
+      projectId: project._id,
+      userId: userId,
+    });
+
+    if (!userMembership) {
+      throw new ApiError(403, "You don't have access to this project");
+    }
+
+    // 5. Format the response data
+    const projectDetails = {
+      _id: project._id,
+      name: project.name,
+      description: project.description,
+      status: project.status,
+      priority: project.priority,
+      visibility: project.visibility,
+      tags: project.tags,
+      createdBy: project.createdBy,
+      role: userMembership.role,
+      joinedAt: userMembership.createdAt,
+    };
+
+    // 6. Return the project details
+    return res.status(200).json(
+      new ApiResponse(200, "Project details retrieved successfully", {
+        project: projectDetails,
+      }),
+    );
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+
+    throw new ApiError(
+      error.statusCode || 500,
+      error.message || "Something went wrong",
+    );
+  }
+});
 
 const updateProject = asyncHandler(async (req, res) => {});
 

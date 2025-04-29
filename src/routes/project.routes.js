@@ -4,12 +4,14 @@ import { validate } from "../middlewares/validator.middlewares.js";
 import {
   addMemberValidator,
   createProjectValidator,
+  getProjectByIdValidator,
   projectIdValidator,
   updateMemberRoleValidator,
 } from "../validators/project.validators.js";
 import {
   addMemberToProject,
   createProject,
+  getProjectById,
   getProjectMembers,
   getProjects,
   updateMemberRole,
@@ -35,5 +37,9 @@ router
   .patch(updateMemberRoleValidator(), validate, updateMemberRole);
 
 router.route("/get-projects").get(getProjects);
+
+router
+  .route("/:projectId")
+  .get(getProjectByIdValidator(), validate, getProjectById);
 
 export default router;
