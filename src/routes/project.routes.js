@@ -6,6 +6,7 @@ import {
   createProjectValidator,
   deleteProjectValidator,
   getProjectByIdValidator,
+  getProjectStatusValidator,
   projectIdValidator,
   removeMemberValidator,
   updateMemberRoleValidator,
@@ -19,6 +20,7 @@ import {
   getProjectById,
   getProjectMembers,
   getProjects,
+  getProjectStatus,
   removeMemberFromProject,
   updateMemberRole,
   updateProject,
@@ -56,5 +58,9 @@ router
 router
   .route("/:projectId/members/:memberId")
   .delete(removeMemberValidator(), validate, removeMemberFromProject);
+
+router
+  .route("/:projectId/status")
+  .get(getProjectStatusValidator(), validate, getProjectStatus);
 
 export default router;
