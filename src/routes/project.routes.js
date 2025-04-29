@@ -5,11 +5,13 @@ import {
   addMemberValidator,
   createProjectValidator,
   projectIdValidator,
+  updateMemberRoleValidator,
 } from "../validators/project.validators.js";
 import {
   addMemberToProject,
   createProject,
   getProjectMembers,
+  updateMemberRole,
 } from "../controllers/project.controllers.js";
 
 const router = Router();
@@ -26,5 +28,9 @@ router
   .route("/:projectId/members")
   .get(projectIdValidator(), validate, getProjectMembers)
   .post(addMemberValidator(), validate, addMemberToProject);
+
+router
+  .route("/:projectId/members/:memberId/role")
+  .patch(updateMemberRoleValidator(), validate, updateMemberRole);
 
 export default router;

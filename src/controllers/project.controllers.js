@@ -219,6 +219,91 @@ const addMemberToProject = asyncHandler(async (req, res) => {
   }
 });
 
+const updateMemberRole = asyncHandler(async (req, res) => {
+  // 1. Extract project ID and member ID from req params
+  const { projectId, memberId } = req.params;
+
+  // 2. Extract new role from req body
+  const { role } = req.body;
+
+  // 3. Get the authenticated user ID
+  const requestingUserId = req.user._id;
+
+  try {
+    // 4. Check if the project exists
+    const project = await Project.findById(projectId);
+    if (!project) {
+      throw new ApiError(404, "Project not found");
+    }
+
+    // 5. Check if the requesting user is a PROJECT_ADMIN of this project
+    const requestingUserMembership = await ProjectMember.findOne({
+      projectId: project._id,
+      userId: requestingUserId,
+      role: UserRolesEnum.PROJECT_ADMIN,
+    });
+
+    if (!requestingUserMembership) {
+      throw new ApiError(
+        403,
+        "You don't have permission to update member roles in this project",
+      );
+    }
+
+    // 6. Check if the member exists in the project
+    const memberToUpdate = await ProjectMember.findOne({
+      projectId: project._id,
+      _id: memberId,
+    });
+
+    if (!memberToUpdate) {
+      throw new ApiError(404, "Member not found in this project");
+    }
+
+    // 7. Check if the new role is valid
+    if (!Object.values(UserRolesEnum).includes(role)) {
+      throw new ApiError(400, "Invalid role provided");
+    }
+
+    // 8. Update the member's role in the project
+    memberToUpdate.role = role;
+    await memberToUpdate.save();
+
+    // 9. Return the updated member details
+    const updatedMember = await ProjectMember.findById(
+      memberToUpdate._id,
+    ).populate({
+      path: "userId",
+      select: "username email avatar role",
+    });
+
+    const member = {
+      _id: updatedMember._id,
+      user: {
+        _id: updatedMember.userId._id,
+        username: updatedMember.userId.username,
+        email: updatedMember.userId.email,
+        avatar: updatedMember.userId.avatar,
+      },
+      role: updatedMember.role,
+      joinedAt: updatedMember.createdAt,
+    };
+
+    return res.status(200).json(
+      new ApiResponse(200, "Member role updated successfully", {
+        member,
+      }),
+    );
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+
+    throw new ApiError(
+      error.statusCode || 500,
+      error.message || "Something went wrong",
+    );
+  }
+});
+
 const getProjects = asyncHandler(async (req, res) => {});
 
 const getProjectById = asyncHandler(async (req, res) => {});
@@ -228,8 +313,6 @@ const updateProject = asyncHandler(async (req, res) => {});
 const deleteProject = asyncHandler(async (req, res) => {});
 
 const updateProjectMembers = asyncHandler(async (req, res) => {});
-
-const updateMemberRole = asyncHandler(async (req, res) => {});
 
 const removeMemberFromProject = asyncHandler(async (req, res) => {});
 

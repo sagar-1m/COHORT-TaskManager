@@ -83,4 +83,31 @@ const addMemberValidator = () => {
   ];
 };
 
-export { createProjectValidator, projectIdValidator, addMemberValidator };
+const updateMemberRoleValidator = () => {
+  return [
+    param("projectId")
+      .notEmpty()
+      .withMessage("Project ID is required")
+      .isMongoId()
+      .withMessage("Invalid Project ID format"),
+
+    param("memberId")
+      .notEmpty()
+      .withMessage("Member ID is required")
+      .isMongoId()
+      .withMessage("Invalid Member ID format"),
+
+    body("role")
+      .notEmpty()
+      .withMessage("Role is required")
+      .isIn(AvailableUserRoles)
+      .withMessage("Invalid user role"),
+  ];
+};
+
+export {
+  createProjectValidator,
+  projectIdValidator,
+  addMemberValidator,
+  updateMemberRoleValidator,
+};
