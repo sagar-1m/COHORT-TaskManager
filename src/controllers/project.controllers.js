@@ -533,7 +533,66 @@ const removeMemberFromProject = asyncHandler(async (req, res) => {
   }
 });
 
-const updateProject = asyncHandler(async (req, res) => {});
+const updateProject = asyncHandler(async (req, res) => {
+  // 1. Extract project ID from req params
+  const { projectId } = req.params;
+
+  // 2. Get the authenticated user ID
+  const userId = req.user._id;
+
+  // 3. Extract the project data from the request body
+  const { name, description, priority, status, visibility, tags, dueDate } =
+    req.body;
+
+  try {
+    // 4. Check if the project exists
+    const project = await Project.findById(projectId);
+    if (!project) {
+      throw new ApiError(404, "Project not found");
+    }
+
+    // 5. Check if the user is a PROJECT_ADMIN of the project
+    const userMembership = await ProjectMember.findOne({
+      projectId: project._id,
+      userId: userId,
+      role: UserRolesEnum.PROJECT_ADMIN,
+    });
+    if (!userMembership) {
+      throw new ApiError(
+        403,
+        "You don't have permission to update this project",
+      );
+    }
+
+    // 6. Update the project details
+    project.name = name ? name.trim() : project.name;
+    project.description = description
+      ? description.trim()
+      : project.description;
+    project.priority = priority || project.priority;
+    project.status = status || project.status;
+    project.visibility = visibility || project.visibility;
+    project.tags = tags || project.tags;
+    project.dueDate = dueDate ? new Date(dueDate) : project.dueDate;
+
+    // 7. Save the updated project
+    await project.save();
+
+    // 8. Return the updated project details
+    return res.status(200).json(
+      new ApiResponse(200, "Project updated successfully", {
+        project,
+      }),
+    );
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+
+    throw new ApiError(
+      error.statusCode || 500,
+      error.message || "Something went wrong",
+    );
+  }
+});
 
 const updateProjectMembers = asyncHandler(async (req, res) => {});
 

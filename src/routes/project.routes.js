@@ -9,6 +9,7 @@ import {
   projectIdValidator,
   removeMemberValidator,
   updateMemberRoleValidator,
+  updateProjectValidator,
 } from "../validators/project.validators.js";
 import {
   addMemberToProject,
@@ -19,6 +20,7 @@ import {
   getProjects,
   removeMemberFromProject,
   updateMemberRole,
+  updateProject,
 } from "../controllers/project.controllers.js";
 
 const router = Router();
@@ -45,6 +47,7 @@ router.route("/get-projects").get(getProjects);
 router
   .route("/:projectId")
   .get(getProjectByIdValidator(), validate, getProjectById)
+  .patch(updateProjectValidator(), validate, updateProject)
   .delete(deleteProjectValidator(), validate, deleteProject);
 
 router
