@@ -2,10 +2,12 @@ import { Router } from "express";
 import { authMiddleware } from "../middlewares/auth.middlewares.js";
 import { validate } from "../middlewares/validator.middlewares.js";
 import {
+  addMemberValidator,
   createProjectValidator,
   projectIdValidator,
 } from "../validators/project.validators.js";
 import {
+  addMemberToProject,
   createProject,
   getProjectMembers,
 } from "../controllers/project.controllers.js";
@@ -22,6 +24,7 @@ router
 
 router
   .route("/:projectId/members")
-  .get(projectIdValidator(), validate, getProjectMembers);
+  .get(projectIdValidator(), validate, getProjectMembers)
+  .post(addMemberValidator(), validate, addMemberToProject);
 
 export default router;

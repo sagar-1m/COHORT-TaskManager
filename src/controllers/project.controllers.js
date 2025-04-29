@@ -2,6 +2,7 @@ import { asyncHandler } from "../utils/async-handler.js";
 import { ApiError } from "../utils/api-error.js ";
 import { ApiResponse } from "../utils/api-response.js";
 
+import User from "../models/user.models.js";
 import Project from "../models/project.models.js";
 import ProjectMember from "../models/projectmember.models.js";
 import { UserRolesEnum } from "../utils/constants.js";
@@ -122,6 +123,102 @@ const getProjectMembers = asyncHandler(async (req, res) => {
   }
 });
 
+const addMemberToProject = asyncHandler(async (req, res) => {
+  // 1. Extract project ID from req params
+  const { projectId } = req.params;
+
+  // 2. Extract user ID to be added and role from req body
+  const { userId: newMemberId, role } = req.body;
+
+  // 3. Get the authenticated user ID
+  const requestingUserId = req.user._id;
+
+  try {
+    // 4. Check if the project exists
+    const project = await Project.findById(projectId);
+    if (!project) {
+      throw new ApiError(404, "Project not found");
+    }
+
+    // 5. Check if the requesting user is a PROJECT_ADMIN of this project
+    const requestingUserMembership = await ProjectMember.findOne({
+      projectId: project._id,
+      userId: requestingUserId,
+      role: UserRolesEnum.PROJECT_ADMIN,
+    });
+
+    if (!requestingUserMembership) {
+      throw new ApiError(
+        403,
+        "You don't have permission to add members to this project",
+      );
+    }
+
+    // 6. Check if the user to be added exists
+    const userToAdd = await User.findById(newMemberId);
+    if (!userToAdd) {
+      throw new ApiError(404, "User not found");
+    }
+
+    // 7. Check if the user is already a member of the project
+    const existingMembership = await ProjectMember.findOne({
+      projectId: project._id,
+      userId: newMemberId,
+    });
+
+    if (existingMembership) {
+      throw new ApiError(409, "User is already a member of this project");
+    }
+
+    // 8. If role is not provided or invalid, set it to default MEMBER role
+    const memberRole =
+      role && Object.values(UserRolesEnum).includes(role)
+        ? role
+        : UserRolesEnum.MEMBER;
+
+    // 9. Add the new member to the project
+    const projectMember = await ProjectMember.create({
+      projectId: project._id,
+      userId: newMemberId,
+      role: memberRole,
+    });
+
+    // 10. Return the created project member with user details
+    const addedMember = await ProjectMember.findById(
+      projectMember._id,
+    ).populate({
+      path: "userId",
+      select: "username email avatar role",
+    });
+
+    // 11. Format the response data
+    const member = {
+      _id: addedMember._id,
+      user: {
+        _id: addedMember.userId._id,
+        username: addedMember.userId.username,
+        email: addedMember.userId.email,
+        avatar: addedMember.userId.avatar,
+      },
+      role: addedMember.role,
+      joinedAt: addedMember.createdAt,
+    };
+
+    return res.status(201).json(
+      new ApiResponse(201, "Member added to project successfully", {
+        member,
+      }),
+    );
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+
+    throw new ApiError(
+      error.statusCode || 500,
+      error.message || "Something went wrong",
+    );
+  }
+});
+
 const getProjects = asyncHandler(async (req, res) => {});
 
 const getProjectById = asyncHandler(async (req, res) => {});
@@ -129,8 +226,6 @@ const getProjectById = asyncHandler(async (req, res) => {});
 const updateProject = asyncHandler(async (req, res) => {});
 
 const deleteProject = asyncHandler(async (req, res) => {});
-
-const addMemberToProject = asyncHandler(async (req, res) => {});
 
 const updateProjectMembers = asyncHandler(async (req, res) => {});
 

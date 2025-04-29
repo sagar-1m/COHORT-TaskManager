@@ -2,6 +2,7 @@ import { body, param } from "express-validator";
 import {
   AvailableProjectStatuses,
   AvailableProjectVisibilities,
+  AvailableUserRoles,
 } from "../utils/constants.js";
 
 const createProjectValidator = () => {
@@ -61,4 +62,25 @@ const projectIdValidator = () => {
   ];
 };
 
-export { createProjectValidator, projectIdValidator };
+const addMemberValidator = () => {
+  return [
+    param("projectId")
+      .notEmpty()
+      .withMessage("Project ID is required")
+      .isMongoId()
+      .withMessage("Invalid Project ID format"),
+
+    body("userId")
+      .notEmpty()
+      .withMessage("User ID is required")
+      .isMongoId()
+      .withMessage("Invalid User ID format"),
+
+    body("role")
+      .optional()
+      .isIn(AvailableUserRoles)
+      .withMessage("Invalid user role"),
+  ];
+};
+
+export { createProjectValidator, projectIdValidator, addMemberValidator };
