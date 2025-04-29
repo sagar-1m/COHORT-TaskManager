@@ -6,6 +6,7 @@ import { fileURLToPath } from "url";
 
 import healthCheckRouter from "./routes/healthcheck.routes.js";
 import authRouter from "./routes/auth.routes.js";
+import projectRouter from "./routes/project.routes.js";
 import { ApiError } from "./utils/api-error.js";
 
 const app = express();
@@ -20,6 +21,7 @@ app.use("/public", express.static(path.join(__dirname, "../public")));
 
 app.use("/api/v1/healthcheck", healthCheckRouter);
 app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/projects", projectRouter);
 
 // Global error handler
 app.use((err, req, res, next) => {

@@ -13,3 +13,29 @@ export const TaskStatusEnum = {
 };
 
 export const AvailableTaskStatuses = Object.values(TaskStatusEnum);
+
+export const ProjectStatusEnum = {
+  ACTIVE: "active",
+  INACTIVE: "inactive",
+  ARCHIVED: "archived",
+};
+
+export const AvailableProjectStatuses = Object.values(ProjectStatusEnum);
+
+export const ProjectPriorityEnum = {
+  LOW: "low",
+  MEDIUM: "medium",
+  HIGH: "high",
+};
+
+export const AvailableProjectPriorities = Object.values(ProjectPriorityEnum);
+
+export const ProjectVisibilityEnum = {
+  PUBLIC: "public",
+  PRIVATE: "private",
+  TEAM: "team",
+};
+
+export const AvailableProjectVisibilities = Object.values(
+  ProjectVisibilityEnum,
+);
