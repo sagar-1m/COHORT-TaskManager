@@ -7,6 +7,7 @@ import {
   deleteProjectValidator,
   getProjectByIdValidator,
   projectIdValidator,
+  removeMemberValidator,
   updateMemberRoleValidator,
 } from "../validators/project.validators.js";
 import {
@@ -16,6 +17,7 @@ import {
   getProjectById,
   getProjectMembers,
   getProjects,
+  removeMemberFromProject,
   updateMemberRole,
 } from "../controllers/project.controllers.js";
 
@@ -44,5 +46,9 @@ router
   .route("/:projectId")
   .get(getProjectByIdValidator(), validate, getProjectById)
   .delete(deleteProjectValidator(), validate, deleteProject);
+
+router
+  .route("/:projectId/members/:memberId")
+  .delete(removeMemberValidator(), validate, removeMemberFromProject);
 
 export default router;

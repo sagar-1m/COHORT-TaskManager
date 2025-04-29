@@ -463,11 +463,79 @@ const deleteProject = asyncHandler(async (req, res) => {
   }
 });
 
+const removeMemberFromProject = asyncHandler(async (req, res) => {
+  // 1. Extract project ID and member ID from req params
+  const { projectId, memberId } = req.params;
+
+  // 2. Get the authenticated user ID
+  const requestingUserId = req.user._id;
+
+  try {
+    // 3. Check if the project exists
+    const project = await Project.findById(projectId);
+    if (!project) {
+      throw new ApiError(404, "Project not found");
+    }
+
+    // 4. Check if the requesting user is a PROJECT_ADMIN of this project
+    const requestingUserMembership = await ProjectMember.findOne({
+      projectId: project._id,
+      userId: requestingUserId,
+      role: UserRolesEnum.PROJECT_ADMIN,
+    });
+
+    if (!requestingUserMembership) {
+      throw new ApiError(
+        403,
+        "You don't have permission to remove members from this project",
+      );
+    }
+
+    // 5. Check if the member exists in the project
+    const memberToRemove = await ProjectMember.findOne({
+      projectId: project._id,
+      _id: memberId,
+    });
+    if (!memberToRemove) {
+      throw new ApiError(404, "Member not found in this project");
+    }
+
+    // 6. Check if the member is the only PROJECT_ADMIN in the project
+    const adminCount = await ProjectMember.countDocuments({
+      projectId: project._id,
+      role: UserRolesEnum.PROJECT_ADMIN,
+    });
+
+    if (
+      adminCount === 1 &&
+      memberToRemove.role === UserRolesEnum.PROJECT_ADMIN
+    ) {
+      throw new ApiError(
+        400,
+        "Cannot remove the only PROJECT_ADMIN from the project",
+      );
+    }
+
+    // 7. Remove the member from the project
+    await ProjectMember.findByIdAndDelete(memberToRemove._id);
+
+    // 8. Return success response
+    return res
+      .status(200)
+      .json(new ApiResponse(200, "Member removed from project successfully"));
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+
+    throw new ApiError(
+      error.statusCode || 500,
+      error.message || "Something went wrong",
+    );
+  }
+});
+
 const updateProject = asyncHandler(async (req, res) => {});
 
 const updateProjectMembers = asyncHandler(async (req, res) => {});
-
-const removeMemberFromProject = asyncHandler(async (req, res) => {});
 
 const getProjectStatus = asyncHandler(async (req, res) => {});
 
