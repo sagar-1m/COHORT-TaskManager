@@ -9,6 +9,7 @@ import {
   projectIdValidator,
   removeMemberValidator,
   updateMemberRoleValidator,
+  updateProjectMembersValidator,
   updateProjectValidator,
 } from "../validators/project.validators.js";
 import {
@@ -21,6 +22,7 @@ import {
   removeMemberFromProject,
   updateMemberRole,
   updateProject,
+  updateProjectMembers,
 } from "../controllers/project.controllers.js";
 
 const router = Router();
@@ -36,7 +38,8 @@ router
 router
   .route("/:projectId/members")
   .get(projectIdValidator(), validate, getProjectMembers)
-  .post(addMemberValidator(), validate, addMemberToProject);
+  .post(addMemberValidator(), validate, addMemberToProject)
+  .patch(updateProjectMembersValidator(), validate, updateProjectMembers);
 
 router
   .route("/:projectId/members/:memberId/role")

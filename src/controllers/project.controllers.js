@@ -594,7 +594,86 @@ const updateProject = asyncHandler(async (req, res) => {
   }
 });
 
-const updateProjectMembers = asyncHandler(async (req, res) => {});
+const updateProjectMembers = asyncHandler(async (req, res) => {
+  // 1. Extract project ID from req params
+  const { projectId } = req.params;
+
+  // 2. Get the authenticated user ID
+  const userId = req.user._id;
+
+  // 3. Extract the member IDs and their new roles from req body
+  const { members } = req.body; // members should be an array of objects with userId and role
+
+  try {
+    // 4. Check if the project exists
+    const project = await Project.findById(projectId);
+    if (!project) {
+      throw new ApiError(404, "Project not found");
+    }
+
+    // 5. Check if the user is a PROJECT_ADMIN of the project
+    const userMembership = await ProjectMember.findOne({
+      projectId: project._id,
+      userId: userId,
+      role: UserRolesEnum.PROJECT_ADMIN,
+    });
+
+    if (!userMembership) {
+      throw new ApiError(
+        403,
+        "You don't have permission to update project members",
+      );
+    }
+
+    // 6. Validate and update each member's role
+    const updatedMembers = [];
+    for (const { memberId, role } of members) {
+      // Check if the member exists in the project
+      const memberToUpdate = await ProjectMember.findOne({
+        projectId: project._id,
+        _id: memberId,
+      });
+
+      if (!memberToUpdate) {
+        throw new ApiError(
+          404,
+          `Member with ID ${memberId} not found in this project`,
+        );
+      }
+
+      // Check if the new role is valid
+      if (!Object.values(UserRolesEnum).includes(role)) {
+        throw new ApiError(400, `Invalid role provided for member ${memberId}`);
+      }
+
+      // Update the member's role
+      memberToUpdate.role = role;
+      await memberToUpdate.save();
+
+      // Populate the updated member details
+      updatedMembers.push({
+        _id: memberToUpdate._id,
+        userId: memberToUpdate.userId,
+        role: memberToUpdate.role,
+        updatedAt: memberToUpdate.updatedAt,
+      });
+    }
+
+    // 7. Return the updated members
+    return res.status(200).json(
+      new ApiResponse(200, "Project members updated successfully", {
+        members: updatedMembers,
+      }),
+    );
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+
+    throw new ApiError(
+      error.statusCode || 500,
+      error.message || "Something went wrong",
+    );
+  }
+});
 
 const getProjectStatus = asyncHandler(async (req, res) => {});
 

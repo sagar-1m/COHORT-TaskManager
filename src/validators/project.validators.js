@@ -3,6 +3,7 @@ import {
   AvailableProjectStatuses,
   AvailableProjectVisibilities,
   AvailableUserRoles,
+  UserRolesEnum,
 } from "../utils/constants.js";
 
 const createProjectValidator = () => {
@@ -194,6 +195,31 @@ const updateProjectValidator = () => {
   ];
 };
 
+const updateProjectMembersValidator = () => {
+  return [
+    param("projectId")
+      .notEmpty()
+      .withMessage("Project ID is required")
+      .isMongoId()
+      .withMessage("Invalid Project ID format"),
+
+    body("members")
+      .isArray({ min: 1 })
+      .withMessage("Members must be an array with at least one member")
+      .custom((value) => {
+        for (const member of value) {
+          if (!member.memberId || !member.role) {
+            throw new Error("Each member must have a memberId and a role");
+          }
+          if (!Object.values(UserRolesEnum).includes(member.role)) {
+            throw new Error("Invalid role for member: " + member.memberId);
+          }
+        }
+        return true;
+      }),
+  ];
+};
+
 export {
   createProjectValidator,
   projectIdValidator,
@@ -203,4 +229,5 @@ export {
   deleteProjectValidator,
   removeMemberValidator,
   updateProjectValidator,
+  updateProjectMembersValidator,
 };
