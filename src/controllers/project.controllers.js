@@ -6,6 +6,8 @@ import User from "../models/user.models.js";
 import Project from "../models/project.models.js";
 import ProjectMember from "../models/projectmember.models.js";
 import { UserRolesEnum } from "../utils/constants.js";
+import Task from "../models/task.models.js";
+import ProjectNote from "../models/note.models.js";
 
 const createProject = asyncHandler(async (req, res) => {
   // 1. Extract the user ID from the request object
@@ -411,9 +413,57 @@ const getProjectById = asyncHandler(async (req, res) => {
   }
 });
 
-const updateProject = asyncHandler(async (req, res) => {});
+const deleteProject = asyncHandler(async (req, res) => {
+  // 1. Extract the project ID from the request params
+  const { projectId } = req.params;
 
-const deleteProject = asyncHandler(async (req, res) => {});
+  // 2. Get the authenticated user ID
+  const userId = req.user._id;
+
+  try {
+    // 3. Check if the project exists
+    const project = await Project.findById(projectId);
+    if (!project) {
+      throw new ApiError(404, "Project not found");
+    }
+
+    // 4. Check if the user is a PROJECT_ADMIN of the project
+    const userMembership = await ProjectMember.findOne({
+      projectId: project._id,
+      userId: userId,
+      role: UserRolesEnum.PROJECT_ADMIN,
+    });
+    if (!userMembership) {
+      throw new ApiError(
+        403,
+        "You don't have permission to delete this project",
+      );
+    }
+
+    // 5. Delete the project and its related members, tasks, subtasks , notes, etc
+    await ProjectMember.deleteMany({ projectId: project._id });
+    await Task.deleteMany({ projectId: project._id });
+    await Subtask.deleteMany({ projectId: project._id });
+    await ProjectNote.deleteMany({ projectId: project._id });
+
+    // 6. Delete the project itself
+    await Project.findByIdAndDelete(project._id);
+
+    // 7. Return success response
+    return res
+      .status(200)
+      .json(new ApiResponse(200, "Project deleted successfully"));
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+
+    throw new ApiError(
+      error.statusCode || 500,
+      error.message || "Something went wrong",
+    );
+  }
+});
+
+const updateProject = asyncHandler(async (req, res) => {});
 
 const updateProjectMembers = asyncHandler(async (req, res) => {});
 

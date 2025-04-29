@@ -115,10 +115,21 @@ const getProjectByIdValidator = () => {
   ];
 };
 
+const deleteProjectValidator = () => {
+  return [
+    param("projectId")
+      .notEmpty()
+      .withMessage("Project ID is required")
+      .isMongoId()
+      .withMessage("Invalid Project ID format"),
+  ];
+};
+
 export {
   createProjectValidator,
   projectIdValidator,
   addMemberValidator,
   updateMemberRoleValidator,
   getProjectByIdValidator,
+  deleteProjectValidator,
 };

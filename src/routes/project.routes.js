@@ -4,6 +4,7 @@ import { validate } from "../middlewares/validator.middlewares.js";
 import {
   addMemberValidator,
   createProjectValidator,
+  deleteProjectValidator,
   getProjectByIdValidator,
   projectIdValidator,
   updateMemberRoleValidator,
@@ -11,6 +12,7 @@ import {
 import {
   addMemberToProject,
   createProject,
+  deleteProject,
   getProjectById,
   getProjectMembers,
   getProjects,
@@ -40,6 +42,7 @@ router.route("/get-projects").get(getProjects);
 
 router
   .route("/:projectId")
-  .get(getProjectByIdValidator(), validate, getProjectById);
+  .get(getProjectByIdValidator(), validate, getProjectById)
+  .delete(deleteProjectValidator(), validate, deleteProject);
 
 export default router;
