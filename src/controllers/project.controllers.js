@@ -60,6 +60,68 @@ const createProject = asyncHandler(async (req, res) => {
   }
 });
 
+const getProjectMembers = asyncHandler(async (req, res) => {
+  // 1. Extract the project ID from the request parameters
+  const { projectId } = req.params;
+
+  // 2. Get the authenticated user ID
+  const userId = req.user._id;
+
+  try {
+    // 3. Check if the project exists
+    const project = await Project.findById(projectId);
+    if (!project) {
+      throw new ApiError(404, "Project not found");
+    }
+
+    // 4. Check if the user is a member of the project
+    const userMembership = await ProjectMember.findOne({
+      projectId: project._id,
+      userId: userId,
+    });
+
+    if (!userMembership) {
+      throw new ApiError(403, "You don't have access to this project");
+    }
+
+    // 5. Get all members of the project
+    const projectMembers = await ProjectMember.find({
+      projectId,
+    }).populate({
+      path: "userId",
+      select: "username email avatar role",
+    });
+
+    // 6. Format the response data
+    const members = projectMembers.map((member) => ({
+      _id: member._id,
+      user: {
+        _id: member.userId._id,
+        username: member.userId.username,
+        email: member.userId.email,
+        avatar: member.userId.avatar,
+      },
+      role: member.role,
+      joinedAt: member.createdAt,
+    }));
+
+    // 7. Return the formatted response
+    return res.status(200).json(
+      new ApiResponse(200, "Project members retrieved successfully", {
+        members,
+        count: members.length,
+      }),
+    );
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+
+    throw new ApiError(
+      error.statusCode || 500,
+      error.message || "Something went wrong",
+    );
+  }
+});
+
 const getProjects = asyncHandler(async (req, res) => {});
 
 const getProjectById = asyncHandler(async (req, res) => {});
@@ -69,8 +131,6 @@ const updateProject = asyncHandler(async (req, res) => {});
 const deleteProject = asyncHandler(async (req, res) => {});
 
 const addMemberToProject = asyncHandler(async (req, res) => {});
-
-const getProjectMembers = asyncHandler(async (req, res) => {});
 
 const updateProjectMembers = asyncHandler(async (req, res) => {});
 

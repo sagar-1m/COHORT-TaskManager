@@ -1,8 +1,14 @@
 import { Router } from "express";
 import { authMiddleware } from "../middlewares/auth.middlewares.js";
 import { validate } from "../middlewares/validator.middlewares.js";
-import { createProjectValidator } from "../validators/project.validators.js";
-import { createProject } from "../controllers/project.controllers.js";
+import {
+  createProjectValidator,
+  projectIdValidator,
+} from "../validators/project.validators.js";
+import {
+  createProject,
+  getProjectMembers,
+} from "../controllers/project.controllers.js";
 
 const router = Router();
 
@@ -13,5 +19,9 @@ router.use(authMiddleware);
 router
   .route("/create-project")
   .post(createProjectValidator(), validate, createProject);
+
+router
+  .route("/:projectId/members")
+  .get(projectIdValidator(), validate, getProjectMembers);
 
 export default router;
