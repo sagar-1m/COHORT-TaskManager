@@ -64,6 +64,10 @@ const taskSchema = new Schema(
       ],
       default: [],
     },
+    needsReview: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true },
 );
