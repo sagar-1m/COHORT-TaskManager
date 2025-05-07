@@ -199,4 +199,80 @@ const getTasks = asyncHandler(async (req, res) => {
   }
 });
 
-export { createTask, getTasks };
+const assignTask = asyncHandler(async (req, res) => {
+  // 1. Extract task ID and project ID from request params
+  const { taskId, projectId } = req.params;
+
+  // 2. Extract user ID from request object
+  const userId = req.user._id;
+
+  // 3. Extract assigned user IDs from request body
+  const { assignedTo } = req.body;
+
+  try {
+    // 4. Check if the project exists
+    const project = await Project.findById(projectId);
+    if (!project) {
+      throw new ApiError(404, "Project not found");
+    }
+
+    // 5. Check if the task exists
+    const task = await Task.findOne({
+      _id: taskId,
+      projectId,
+    });
+    if (!task) {
+      throw new ApiError(404, "Task not found");
+    }
+
+    // 6. Check if the user is a project admin
+    const userMembership = await ProjectMember.findOne({
+      projectId,
+      userId,
+      role: "project_admin",
+    });
+    if (!userMembership) {
+      throw new ApiError(403, "You don't have permission to assign tasks");
+    }
+
+    // 7. Validate assigned users
+    const assignedUserIds = [];
+    if (assignedTo && assignedTo.length > 0) {
+      for (const memberId of assignedTo) {
+        const member = await ProjectMember.findOne({
+          projectId,
+          _id: memberId,
+        });
+        if (!member) {
+          throw new ApiError(
+            403,
+            `Member with ID ${memberId} is not a member of the project`,
+          );
+        }
+        assignedUserIds.push(member.userId);
+      }
+    }
+
+    // 8. Update the task with the new assigned users
+    task.assignedTo = assignedUserIds;
+    task.updatedBy = userId;
+    task.needsReview = false; // Mark as not needing review if assigned to someone
+    await task.save();
+
+    // 9. Return the updated task
+    return res.status(200).json(
+      new ApiResponse(200, "Task assigned successfully", {
+        task,
+      }),
+    );
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+
+    throw new ApiError(
+      error.statusCode || 500,
+      error.message || "Something went wrong",
+    );
+  }
+});
+
+export { createTask, getTasks, assignTask };

@@ -4,8 +4,13 @@ import { validate } from "../middlewares/validator.middlewares.js";
 import {
   createTaskValidator,
   getTasksValidator,
+  assignTaskValidator,
 } from "../validators/task.validators.js";
-import { createTask, getTasks } from "../controllers/task.controllers.js";
+import {
+  createTask,
+  getTasks,
+  assignTask,
+} from "../controllers/task.controllers.js";
 
 const router = Router();
 
@@ -20,5 +25,9 @@ router
 router
   .route("/:projectId/get-tasks")
   .get(getTasksValidator(), validate, getTasks);
+
+router
+  .route("/:projectId/assign-task/:taskId")
+  .patch(assignTaskValidator(), validate, assignTask);
 
 export default router;

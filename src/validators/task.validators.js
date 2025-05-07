@@ -113,4 +113,31 @@ const getTasksValidator = () => {
   ];
 };
 
-export { createTaskValidator, getTasksValidator };
+const assignTaskValidator = () => {
+  return [
+    param("taskId")
+      .notEmpty()
+      .withMessage("Task ID is required")
+      .isMongoId()
+      .withMessage("Invalid Task ID format"),
+    param("projectId")
+      .notEmpty()
+      .withMessage("Project ID is required")
+      .isMongoId()
+      .withMessage("Invalid Project ID format"),
+    body("assignedTo")
+      .optional()
+      .isArray()
+      .withMessage("Assigned users must be an array")
+      .custom((value) => {
+        for (const memberId of value) {
+          if (!memberId.match(/^[0-9a-fA-F]{24}$/)) {
+            throw new Error("Invalid member ID format");
+          }
+        }
+        return true;
+      }),
+  ];
+};
+
+export { createTaskValidator, getTasksValidator, assignTaskValidator };
