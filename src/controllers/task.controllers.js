@@ -200,6 +200,58 @@ const getTasks = asyncHandler(async (req, res) => {
   }
 });
 
+const getTaskById = asyncHandler(async (req, res) => {
+  // 1. Extract task ID and project ID from request params
+  const { taskId, projectId } = req.params;
+
+  // 2. Extract user ID from request object
+  const userId = req.user._id;
+
+  try {
+    // 3. Check if the project exists
+    const project = await Project.findById(projectId);
+    if (!project) {
+      throw new ApiError(404, "Project not found");
+    }
+
+    // 4. Check if the task exists
+    const task = await Task.findOne({
+      _id: taskId,
+      projectId,
+    })
+      .populate("assignedTo", "name email")
+      .populate("createdBy", "name email")
+      .populate("updatedBy", "name email");
+
+    if (!task) {
+      throw new ApiError(404, "Task not found");
+    }
+
+    // 5. Check if the user is a member of the project
+    const userMembership = await ProjectMember.findOne({
+      projectId,
+      userId,
+    });
+    if (!userMembership) {
+      throw new ApiError(403, "User is not a member of the project");
+    }
+
+    // 6. Return the task details
+    return res.status(200).json(
+      new ApiResponse(200, "Task fetched successfully", {
+        task,
+      }),
+    );
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+
+    throw new ApiError(
+      error.statusCode || 500,
+      error.message || "Something went wrong",
+    );
+  }
+});
+
 const assignTask = asyncHandler(async (req, res) => {
   // 1. Extract task ID and project ID from request params
   const { taskId, projectId } = req.params;
@@ -514,6 +566,7 @@ const deleteTask = asyncHandler(async (req, res) => {
 export {
   createTask,
   getTasks,
+  getTaskById,
   assignTask,
   getBoardTasks,
   updateTask,

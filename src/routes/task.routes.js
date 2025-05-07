@@ -8,6 +8,7 @@ import {
   getBoardTasksValidator,
   updateTaskValidator,
   deleteTaskValidator,
+  getTaskByIdValidator,
 } from "../validators/task.validators.js";
 import {
   createTask,
@@ -16,6 +17,7 @@ import {
   getBoardTasks,
   updateTask,
   deleteTask,
+  getTaskById,
 } from "../controllers/task.controllers.js";
 
 const router = Router();
@@ -31,6 +33,10 @@ router
 router
   .route("/:projectId/get-tasks")
   .get(getTasksValidator(), validate, getTasks);
+
+router
+  .route("/:projectId/get-task/:taskId")
+  .get(getTaskByIdValidator(), validate, getTaskById);
 
 router
   .route("/:projectId/assign-task/:taskId")

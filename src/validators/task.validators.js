@@ -113,6 +113,21 @@ const getTasksValidator = () => {
   ];
 };
 
+const getTaskByIdValidator = () => {
+  return [
+    param("taskId")
+      .notEmpty()
+      .withMessage("Task ID is required")
+      .isMongoId()
+      .withMessage("Invalid Task ID format"),
+    param("projectId")
+      .notEmpty()
+      .withMessage("Project ID is required")
+      .isMongoId()
+      .withMessage("Invalid Project ID format"),
+  ];
+};
+
 const assignTaskValidator = () => {
   return [
     param("taskId")
@@ -270,6 +285,7 @@ const deleteTaskValidator = () => {
 export {
   createTaskValidator,
   getTasksValidator,
+  getTaskByIdValidator,
   assignTaskValidator,
   getBoardTasksValidator,
   updateTaskValidator,
