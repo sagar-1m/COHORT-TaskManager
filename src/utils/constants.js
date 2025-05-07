@@ -39,3 +39,17 @@ export const ProjectVisibilityEnum = {
 export const AvailableProjectVisibilities = Object.values(
   ProjectVisibilityEnum,
 );
+
+export const BoardNameEnum = {
+  TODO: "To Do",
+  IN_PROGRESS: "In Progress",
+  DONE: "Done",
+};
+
+export const AvailableBoardNames = Object.values(BoardNameEnum);
+
+export const BoardToTaskStatusMap = {
+  [BoardNameEnum.TODO]: TaskStatusEnum.TODO,
+  [BoardNameEnum.IN_PROGRESS]: TaskStatusEnum.IN_PROGRESS,
+  [BoardNameEnum.DONE]: TaskStatusEnum.DONE,
+};
