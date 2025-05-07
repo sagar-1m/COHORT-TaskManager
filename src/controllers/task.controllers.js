@@ -4,6 +4,7 @@ import { ApiResponse } from "../utils/api-response.js";
 import Task from "../models/task.models.js";
 import Project from "../models/project.models.js";
 import ProjectMember from "../models/projectMember.models.js";
+import Board from "../models/board.models.js";
 
 const createTask = asyncHandler(async (req, res) => {
   // 1. Extract project ID from request params
@@ -275,4 +276,90 @@ const assignTask = asyncHandler(async (req, res) => {
   }
 });
 
-export { createTask, getTasks, assignTask };
+const getBoardTasks = asyncHandler(async (req, res) => {
+  // 1. Extract board ID from request params
+  const { boardId } = req.params;
+
+  // 2. Extract user ID from request object
+  const userId = req.user._id;
+
+  // 3. Extract query parameters for filtering, sorting, and pagination
+  const { priority, assignedTo, page, limit, sortBy } = req.query;
+
+  try {
+    // 4. Check if the board exists and fetch its project ID
+    const board = await Board.findById(boardId).populate("projectId", "name");
+
+    if (!board) {
+      throw new ApiError(404, "Board not found");
+    }
+
+    // 5. Check if the user is a member of the project associated with the board
+    const userMembership = await ProjectMember.findOne({
+      projectId: board.projectId._id,
+      userId,
+    });
+
+    if (!userMembership) {
+      throw new ApiError(403, "You don't have permission to access this board");
+    }
+
+    // 7. Build the query object for filtering tasks
+    const query = { projectId: board.projectId._id, status: board.status };
+
+    if (priority) {
+      query.priority = priority;
+    }
+    if (assignedTo) {
+      query.assignedTo = { $in: assignedTo.split(",") };
+    }
+
+    // 8. Handle Pagination
+    const pageNumber = parseInt(page, 10) || 1;
+    const pageSize = parseInt(limit, 10) || 10;
+    const skip = (pageNumber - 1) * pageSize;
+
+    // 9. Handle Sorting
+    const sortOptions = {};
+    if (sortBy) {
+      const [field, order] = sortBy.split(":");
+      sortOptions[field] = order === "desc" ? -1 : 1;
+    } else {
+      sortOptions.createdAt = -1; // Default sorting by creation date (newest first)
+    }
+
+    // 10. Fetch tasks from the database with filtering, sorting, and pagination
+    const tasks = await Task.find(query)
+      .skip(skip)
+      .limit(pageSize)
+      .sort(sortOptions)
+      .populate("assignedTo", "name email")
+      .populate("createdBy", "name email")
+      .populate("updatedBy", "name email");
+
+    // 11. Get the total count of tasks for pagination
+    const totalTasks = await Task.countDocuments(query);
+
+    // 12. Return the tasks and pagination info
+    return res.status(200).json(
+      new ApiResponse(200, "Tasks fetched successfully", {
+        tasks,
+        pagination: {
+          totalTasks,
+          totalPages: Math.ceil(totalTasks / pageSize),
+          currentPage: pageNumber,
+          pageSize,
+        },
+      }),
+    );
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+
+    throw new ApiError(
+      error.statusCode || 500,
+      error.message || "Something went wrong",
+    );
+  }
+});
+
+export { createTask, getTasks, assignTask, getBoardTasks };

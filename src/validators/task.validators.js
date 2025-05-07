@@ -140,4 +140,55 @@ const assignTaskValidator = () => {
   ];
 };
 
-export { createTaskValidator, getTasksValidator, assignTaskValidator };
+const getBoardTasksValidator = () => {
+  return [
+    param("boardId")
+      .notEmpty()
+      .withMessage("Board ID is required")
+      .isMongoId()
+      .withMessage("Invalid Board ID format"),
+    query("status")
+      .optional()
+      .isIn(AvailableTaskStatuses)
+      .withMessage("Invalid task status"),
+    query("priority")
+      .optional()
+      .isIn(Object.values(ProjectPriorityEnum))
+      .withMessage("Invalid task priority"),
+    query("assignedTo")
+      .optional()
+      .isMongoId()
+      .withMessage("Assigned user ID must be a valid MongoDB ID"),
+    query("exactAssignedTo")
+      .optional()
+      .isBoolean()
+      .withMessage("Exact assignedTo must be a boolean"),
+    query("createdBy")
+      .optional()
+      .isMongoId()
+      .withMessage("Invalid CreatedBy user ID format"),
+    query("needsReview")
+      .optional()
+      .isBoolean()
+      .withMessage("Needs review must be a boolean"),
+    query("page")
+      .optional()
+      .isInt({ min: 1 })
+      .withMessage("Page must be a positive integer"),
+    query("limit")
+      .optional()
+      .isInt({ min: 1 })
+      .withMessage("Limit must be a positive integer"),
+    query("sortBy")
+      .optional()
+      .isString()
+      .withMessage("SortBy must be a string in the format 'field:order'"),
+  ];
+};
+
+export {
+  createTaskValidator,
+  getTasksValidator,
+  assignTaskValidator,
+  getBoardTasksValidator,
+};

@@ -5,11 +5,13 @@ import {
   createTaskValidator,
   getTasksValidator,
   assignTaskValidator,
+  getBoardTasksValidator,
 } from "../validators/task.validators.js";
 import {
   createTask,
   getTasks,
   assignTask,
+  getBoardTasks,
 } from "../controllers/task.controllers.js";
 
 const router = Router();
@@ -30,4 +32,7 @@ router
   .route("/:projectId/assign-task/:taskId")
   .patch(assignTaskValidator(), validate, assignTask);
 
+router
+  .route("/:boardId/get-board-tasks")
+  .get(getBoardTasksValidator(), validate, getBoardTasks);
 export default router;
