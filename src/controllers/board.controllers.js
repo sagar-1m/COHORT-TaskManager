@@ -74,4 +74,52 @@ const createBoard = asyncHandler(async (req, res) => {
   }
 });
 
-export { createBoard };
+const getAllBoards = asyncHandler(async (req, res) => {
+  // 1. Extract project ID from request params
+  const { projectId } = req.params;
+
+  // 2. Extract user ID from request object
+  const userId = req.user._id;
+
+  try {
+    // 3. Check if the project exists
+    const project = await Project.findById(projectId);
+    if (!project) {
+      throw new ApiError(404, "Project not found");
+    }
+
+    // 4. Check if the user is a project member
+    const userMembership = await ProjectMember.findOne({
+      projectId,
+      userId,
+    });
+
+    if (!userMembership) {
+      throw new ApiError(403, "You don't have permission to view boards");
+    }
+
+    // 5. Fetch all boards for the project
+    const boards = await Board.find({
+      projectId,
+      deleted: false, // Exclude deleted boards
+    })
+      .sort({ createdAt: -1 }) // Sort by creation date in descending order
+      .populate("createdBy", "name email"); // Populate the createdBy field with user details
+
+    // 6. Return the boards in the response
+    return res.status(200).json(
+      new ApiResponse(200, "Boards fetched successfully", {
+        boards,
+      }),
+    );
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+
+    throw new ApiError(
+      error.statusCode || 500,
+      error.message || "Something went wrong",
+    );
+  }
+});
+
+export { createBoard, getAllBoards };
