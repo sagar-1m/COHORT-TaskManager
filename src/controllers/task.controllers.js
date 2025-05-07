@@ -362,4 +362,97 @@ const getBoardTasks = asyncHandler(async (req, res) => {
   }
 });
 
-export { createTask, getTasks, assignTask, getBoardTasks };
+const updateTask = asyncHandler(async (req, res) => {
+  // 1. Extract task ID and project ID from request params
+  const { taskId, projectId } = req.params;
+
+  // 2. Extract user ID from request object
+  const userId = req.user._id;
+
+  // 3. Extract update data from request body
+  const { title, description, assignedTo, status, priority, dueDate } =
+    req.body;
+
+  try {
+    // 4. Check if the project exists
+    const project = await Project.findById(projectId);
+    if (!project) {
+      throw new ApiError(404, "Project not found");
+    }
+
+    // 5. Check if the task exists
+    const task = await Task.findOne({
+      _id: taskId,
+      projectId,
+    });
+    if (!task) {
+      throw new ApiError(404, "Task not found");
+    }
+
+    // 6. Check if the user is a member of the project
+    const userMembership = await ProjectMember.findOne({
+      projectId,
+      userId,
+    });
+    if (!userMembership) {
+      throw new ApiError(403, "User is not a member of the project");
+    }
+
+    // 7. Restrict MEMBER role from updating certain fields
+    if (userMembership.role === "member") {
+      if (assignedTo || status) {
+        throw new ApiError(
+          403,
+          "Members cannot update assigned users or status",
+        );
+      }
+    }
+
+    // 8. Validate assigned users
+    const assignedUserIds = [];
+    if (assignedTo && assignedTo.length > 0) {
+      for (const memberId of assignedTo) {
+        const member = await ProjectMember.findOne({
+          projectId,
+          _id: memberId,
+        });
+        if (!member) {
+          throw new ApiError(
+            403,
+            `Member with ID ${memberId} is not a member of the project`,
+          );
+        }
+        assignedUserIds.push(member.userId);
+      }
+    }
+
+    // 9. Update the task with the new data
+    task.title = title ? title.trim() : task.title;
+    task.description = description ? description.trim() : task.description;
+    task.assignedTo =
+      assignedUserIds.length > 0 ? assignedUserIds : task.assignedTo;
+    task.status = status || task.status;
+    task.priority = priority || task.priority;
+    task.dueDate = dueDate ? new Date(dueDate) : task.dueDate;
+    task.updatedBy = userId;
+
+    // 10. Save the updated task
+    await task.save();
+
+    // 11. Return the updated task
+    return res.status(200).json(
+      new ApiResponse(200, "Task updated successfully", {
+        task,
+      }),
+    );
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+
+    throw new ApiError(
+      error.statusCode || 500,
+      error.message || "Something went wrong",
+    );
+  }
+});
+
+export { createTask, getTasks, assignTask, getBoardTasks, updateTask };

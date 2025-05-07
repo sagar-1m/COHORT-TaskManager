@@ -186,9 +186,76 @@ const getBoardTasksValidator = () => {
   ];
 };
 
+const updateTaskValidator = () => {
+  return [
+    param("taskId")
+      .notEmpty()
+      .withMessage("Task ID is required")
+      .isMongoId()
+      .withMessage("Invalid Task ID format"),
+    param("projectId")
+      .notEmpty()
+      .withMessage("Project ID is required")
+      .isMongoId()
+      .withMessage("Invalid Project ID format"),
+    body("title")
+      .optional()
+      .isString()
+      .withMessage("Title must be a string")
+      .trim()
+      .isLength({ min: 3, max: 100 })
+      .withMessage("Task Title must be between 3 and 100 characters"),
+    body("description")
+      .optional()
+      .isString()
+      .withMessage("Task description must be a string")
+      .trim(),
+    body("status")
+      .optional()
+      .isString()
+      .withMessage("Status must be a string")
+      .isIn(AvailableTaskStatuses)
+      .withMessage("Invalid task status"),
+    body("priority")
+      .optional()
+      .isString()
+      .withMessage("Priority must be a string")
+      .isIn(Object.values(ProjectPriorityEnum))
+      .withMessage("Invalid task priority"),
+    body("assignedTo")
+      .optional()
+      .isArray()
+      .withMessage("Assigned users must be an array")
+      .custom((value) => {
+        for (const memberId of value) {
+          if (!memberId.match(/^[0-9a-fA-F]{24}$/)) {
+            throw new Error("Invalid member ID format");
+          }
+        }
+        return true;
+      }),
+
+    body("dueDate")
+      .optional()
+      .isISO8601()
+      .withMessage("Due date must be a valid date format"),
+    body("attachments")
+      .optional()
+      .isArray()
+      .withMessage("Attachments must be an array")
+      .custom((value) => {
+        if (value.length > 5) {
+          throw new Error("You can only upload a maximum of 5 attachments");
+        }
+        return true;
+      }),
+  ];
+};
+
 export {
   createTaskValidator,
   getTasksValidator,
   assignTaskValidator,
   getBoardTasksValidator,
+  updateTaskValidator,
 };
