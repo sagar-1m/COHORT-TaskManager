@@ -7,6 +7,7 @@ import {
   assignTaskValidator,
   getBoardTasksValidator,
   updateTaskValidator,
+  deleteTaskValidator,
 } from "../validators/task.validators.js";
 import {
   createTask,
@@ -14,6 +15,7 @@ import {
   assignTask,
   getBoardTasks,
   updateTask,
+  deleteTask,
 } from "../controllers/task.controllers.js";
 
 const router = Router();
@@ -41,5 +43,9 @@ router
 router
   .route("/:projectId/update-task/:taskId")
   .patch(updateTaskValidator(), validate, updateTask);
+
+router
+  .route("/:projectId/delete-task/:taskId")
+  .delete(deleteTaskValidator(), validate, deleteTask);
 
 export default router;
