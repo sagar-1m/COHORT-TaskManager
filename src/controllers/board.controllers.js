@@ -4,6 +4,7 @@ import { ApiResponse } from "../utils/api-response.js";
 import Board from "../models/board.models.js";
 import Project from "../models/project.models.js";
 import ProjectMember from "../models/projectMember.models.js";
+import Task from "../models/task.models.js";
 import { BoardToTaskStatusMap } from "../utils/constants.js";
 
 const createBoard = asyncHandler(async (req, res) => {
@@ -106,10 +107,28 @@ const getAllBoards = asyncHandler(async (req, res) => {
       .sort({ createdAt: -1 }) // Sort by creation date in descending order
       .populate("createdBy", "name email"); // Populate the createdBy field with user details
 
+    // Fetch the tasks for each board
+    const boardsWithTasks = await Promise.all(
+      boards.map(async (board) => {
+        const tasks = await Task.find({
+          projectId,
+          status: board.status,
+        })
+          .populate("assignedTo", "name email")
+          .populate("createdBy", "name email")
+          .populate("updatedBy", "name email");
+
+        return {
+          ...board.toObject(),
+          tasks,
+        };
+      }),
+    );
+
     // 6. Return the boards in the response
     return res.status(200).json(
-      new ApiResponse(200, "Boards fetched successfully", {
-        boards,
+      new ApiResponse(200, "Boards with tasks fetched successfully", {
+        boards: boardsWithTasks,
       }),
     );
   } catch (error) {
