@@ -3,12 +3,14 @@ import { authMiddleware } from "../middlewares/auth.middlewares.js";
 import { validate } from "../middlewares/validator.middlewares.js";
 import {
   createNoteValidator,
+  deleteNoteValidator,
   getNoteByIdValidator,
   getNotesValidator,
   updateNoteValidator,
 } from "../validators/note.validators.js";
 import {
   createNote,
+  deleteNote,
   getNoteById,
   getNotes,
   updateNote,
@@ -33,5 +35,9 @@ router
 router
   .route("/:projectId/:taskId?/update-note/:noteId")
   .patch(updateNoteValidator(), validate, updateNote);
+
+router
+  .route("/:projectId/:taskId?/delete-note/:noteId")
+  .delete(deleteNoteValidator(), validate, deleteNote);
 
 export default router;
