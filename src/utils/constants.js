@@ -53,3 +53,11 @@ export const BoardToTaskStatusMap = {
   [BoardNameEnum.IN_PROGRESS]: TaskStatusEnum.IN_PROGRESS,
   [BoardNameEnum.DONE]: TaskStatusEnum.DONE,
 };
+
+export const SubtaskPriorityEnum = {
+  LOW: "low",
+  MEDIUM: "medium",
+  HIGH: "high",
+};
+
+export const AvailableSubtaskPriorities = Object.values(SubtaskPriorityEnum);
