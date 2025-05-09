@@ -1,4 +1,4 @@
-import { body, param } from "express-validator";
+import { body, param, query } from "express-validator";
 import { AvailableNoteVisibilities } from "../utils/constants.js";
 
 const createNoteValidator = () => {
@@ -29,4 +29,31 @@ const createNoteValidator = () => {
   ];
 };
 
-export { createNoteValidator };
+const getNotesValidator = () => {
+  return [
+    param("projectId")
+      .notEmpty()
+      .withMessage("Project ID is required")
+      .isMongoId()
+      .withMessage("Invalid Project ID format"),
+    param("taskId")
+      .optional()
+      .isMongoId()
+      .withMessage("Invalid Task ID format"),
+    query("visibility")
+      .optional()
+      .isString()
+      .withMessage("Visibility must be a string")
+      .isIn(AvailableNoteVisibilities)
+      .withMessage("Invalid note visibility"),
+    query("page")
+      .optional()
+      .isInt({ min: 1 })
+      .withMessage("Page must be a positive integer"),
+    query("limit")
+      .optional()
+      .isInt({ min: 1 })
+      .withMessage("Limit must be a positive integer"),
+  ];
+};
+export { createNoteValidator, getNotesValidator };

@@ -86,7 +86,86 @@ const createNote = asyncHandler(async (req, res) => {
   }
 });
 
-const getNotes = asyncHandler(async (req, res) => {});
+const getNotes = asyncHandler(async (req, res) => {
+  // 1. Extract projectId and taskId from the request params
+  const { projectId, taskId } = req.params;
+
+  // 2. Extract user ID from request object
+  const userId = req.user._id;
+
+  // 3. Extract query parameters for filtering and pagination
+  const { visibility, page, limit } = req.query;
+
+  try {
+    // 4. Check if the project exists
+    const project = await Project.findById(projectId);
+    if (!project) {
+      throw new ApiError(404, "Project not found");
+    }
+
+    // 5. Check if the user is a member of the project
+    const userMembership = await ProjectMember.findOne({
+      projectId,
+      userId,
+    });
+    if (!userMembership) {
+      throw new ApiError(403, "User is not a member of the project");
+    }
+
+    // 6. Build the query for fetching notes
+    const query = { projectId, deleted: false };
+    if (taskId) {
+      query.taskId = taskId;
+    }
+
+    // Enforce visibility restrictions based on user role
+    if (visibility === "private") {
+      if (userMembership.role === "project_admin") {
+        query.visibility = "private";
+      } else {
+        query.visibility = "private";
+        query.createdBy = userId;
+      }
+    } else if (visibility) {
+      query.visibility = visibility;
+    }
+
+    // 7. Handle pagination
+    const pageNumber = parseInt(page, 10) || 1;
+    const pageSize = parseInt(limit, 10) || 10;
+    const skip = (pageNumber - 1) * pageSize;
+
+    // 8. Fetch notes from the database
+    const notes = await ProjectNote.find(query)
+      .skip(skip)
+      .limit(pageSize)
+      .populate("createdBy", "name email")
+      .sort({ createdAt: -1 });
+
+    // 9. Get the total count of notes for pagination
+    const totalNotes = await ProjectNote.countDocuments(query);
+
+    // 10. Send success response
+    return res.status(200).json(
+      new ApiResponse(200, "Notes fetched successfully", {
+        notes,
+        pagination: {
+          totalNotes,
+          totalPages: Math.ceil(totalNotes / pageSize),
+          currentPage: pageNumber,
+          pageSize,
+        },
+      }),
+    );
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+
+    throw new ApiError(
+      error.statusCode || 500,
+      error.message || "Something went wrong",
+    );
+  }
+});
 
 const getNoteById = asyncHandler(async (req, res) => {});
 
