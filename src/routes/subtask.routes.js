@@ -5,12 +5,14 @@ import {
   createSubtaskValidator,
   deleteSubtaskValidator,
   getAllSubtasksByTaskIdValidator,
+  getSubtaskByIdValidator,
   updateSubtaskValidator,
 } from "../validators/subtask.validators.js";
 import {
   createSubtask,
   deleteSubtask,
   getAllSubtasksByTaskId,
+  getSubtaskById,
   updateSubtask,
 } from "../controllers/subtask.controllers.js";
 
@@ -33,5 +35,9 @@ router
 router
   .route("/:projectId/:taskId/get-subtasks")
   .get(getAllSubtasksByTaskIdValidator(), validate, getAllSubtasksByTaskId);
+
+router
+  .route("/:projectId/:taskId/get-subtask/:subtaskId")
+  .get(getSubtaskByIdValidator(), validate, getSubtaskById);
 
 export default router;

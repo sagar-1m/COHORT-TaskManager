@@ -142,9 +142,30 @@ const getAllSubtasksByTaskIdValidator = () => {
   ];
 };
 
+const getSubtaskByIdValidator = () => {
+  return [
+    param("subtaskId")
+      .notEmpty()
+      .withMessage("Subtask ID is required")
+      .isMongoId()
+      .withMessage("Invalid Subtask ID format"),
+    param("taskId")
+      .notEmpty()
+      .withMessage("Task ID is required")
+      .isMongoId()
+      .withMessage("Invalid Task ID format"),
+    param("projectId")
+      .notEmpty()
+      .withMessage("Project ID is required")
+      .isMongoId()
+      .withMessage("Invalid Project ID format"),
+  ];
+};
+
 export {
   createSubtaskValidator,
   updateSubtaskValidator,
   deleteSubtaskValidator,
   getAllSubtasksByTaskIdValidator,
+  getSubtaskByIdValidator,
 };

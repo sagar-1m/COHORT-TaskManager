@@ -84,7 +84,65 @@ const createSubtask = asyncHandler(async (req, res) => {
 
 const getSubtasks = asyncHandler(async (req, res) => {});
 
-const getSubtaskById = asyncHandler(async (req, res) => {});
+const getSubtaskById = asyncHandler(async (req, res) => {
+  // 1. Extract subtaskId, taskId, and projectId from the request params
+  const { subtaskId, taskId, projectId } = req.params;
+
+  // 2. Extract user ID from request object
+  const userId = req.user._id;
+
+  try {
+    // 3. Check if the project exists
+    const project = await Project.findById(projectId);
+    if (!project) {
+      throw new ApiError(404, "Project not found");
+    }
+
+    // 4. Check if the task exists
+    const task = await Task.findOne({
+      _id: taskId,
+      projectId,
+    });
+    if (!task) {
+      throw new ApiError(404, "Task not found");
+    }
+
+    // 5. Check if the subtask exists
+    const subtask = await Subtask.findOne({
+      _id: subtaskId,
+      taskId,
+      projectId,
+    })
+      .populate("createdBy", "name email")
+      .populate("updatedBy", "name email");
+    if (!subtask) {
+      throw new ApiError(404, "Subtask not found");
+    }
+
+    // 6. Check if the user is a member of the project
+    const userMembership = await ProjectMember.findOne({
+      projectId,
+      userId,
+    });
+    if (!userMembership) {
+      throw new ApiError(403, "You don't have permission to view subtasks");
+    }
+
+    // 7. Respond with the subtask details
+    return res.status(200).json(
+      new ApiResponse(200, "Subtask fetched successfully", {
+        subtask,
+      }),
+    );
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+
+    throw new ApiError(
+      error.statusCode || 500,
+      error.message || "Something went wrong",
+    );
+  }
+});
 
 const updateSubtask = asyncHandler(async (req, res) => {
   // 1. Extract subtaskId, taskId, and projectId from the request params
@@ -332,7 +390,7 @@ const getAllSubtasksByProjectId = asyncHandler(async (req, res) => {});
 export {
   createSubtask,
   // getSubtasks
-  // getSubtaskById,
+  getSubtaskById,
   updateSubtask,
   deleteSubtask,
   getAllSubtasksByTaskId,
