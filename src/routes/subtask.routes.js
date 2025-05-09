@@ -4,6 +4,7 @@ import { validate } from "../middlewares/validator.middlewares.js";
 import {
   createSubtaskValidator,
   deleteSubtaskValidator,
+  getAllSubtasksByProjectIdValidator,
   getAllSubtasksByTaskIdValidator,
   getSubtaskByIdValidator,
   updateSubtaskValidator,
@@ -11,6 +12,7 @@ import {
 import {
   createSubtask,
   deleteSubtask,
+  getAllSubtasksByProjectId,
   getAllSubtasksByTaskId,
   getSubtaskById,
   updateSubtask,
@@ -39,5 +41,13 @@ router
 router
   .route("/:projectId/:taskId/get-subtask/:subtaskId")
   .get(getSubtaskByIdValidator(), validate, getSubtaskById);
+
+router
+  .route("/:projectId/get-all-subtasks")
+  .get(
+    getAllSubtasksByProjectIdValidator(),
+    validate,
+    getAllSubtasksByProjectId,
+  );
 
 export default router;

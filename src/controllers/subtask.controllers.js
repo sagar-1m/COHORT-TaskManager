@@ -82,8 +82,6 @@ const createSubtask = asyncHandler(async (req, res) => {
   }
 });
 
-const getSubtasks = asyncHandler(async (req, res) => {});
-
 const getSubtaskById = asyncHandler(async (req, res) => {
   // 1. Extract subtaskId, taskId, and projectId from the request params
   const { subtaskId, taskId, projectId } = req.params;
@@ -385,14 +383,86 @@ const getAllSubtasksByTaskId = asyncHandler(async (req, res) => {
   }
 });
 
-const getAllSubtasksByProjectId = asyncHandler(async (req, res) => {});
+const getAllSubtasksByProjectId = asyncHandler(async (req, res) => {
+  // 1. Extract projectId from the request params
+  const { projectId } = req.params;
+
+  // 2. Extract user ID from request object
+  const userId = req.user._id;
+
+  // 3. Extract query parameters for pagination and filtering
+  const { isCompleted, priority, page, limit } = req.query;
+
+  try {
+    // 4. Check if the project exists
+    const project = await Project.findById(projectId);
+    if (!project) {
+      throw new ApiError(404, "Project not found");
+    }
+
+    // 5. Check if the user is a member of the project
+    const userMembership = await ProjectMember.findOne({
+      projectId,
+      userId,
+    });
+    if (!userMembership) {
+      throw new ApiError(403, "You don't have permission to view subtasks");
+    }
+
+    // 6. Build the query object for filtering subtasks
+    const query = {
+      projectId,
+    };
+    if (isCompleted !== undefined) {
+      query.isCompleted = isCompleted === "true";
+    }
+    if (priority) {
+      query.priority = priority;
+    }
+
+    // 7. Handle pagination
+    const pageNumber = parseInt(page, 10) || 1;
+    const pageSize = parseInt(limit, 10) || 10;
+    const skip = (pageNumber - 1) * pageSize;
+
+    // 8. Fetch subtasks with pagination and filtering
+    const subtasks = await Subtask.find(query)
+      .skip(skip)
+      .limit(pageSize)
+      .sort({ createdAt: -1 }) // Sort by creation date (newest first)
+      .populate("createdBy", "name email")
+      .populate("updatedBy", "name email");
+
+    // 9. Get the total count of subtasks for pagination info
+    const totalSubtasks = await Subtask.countDocuments(query);
+
+    // 10. Respond with the subtasks and pagination info
+    return res.status(200).json(
+      new ApiResponse(200, "Subtasks fetched successfully", {
+        subtasks,
+        pagination: {
+          totalSubtasks,
+          totalPages: Math.ceil(totalSubtasks / pageSize),
+          currentPage: pageNumber,
+          pageSize,
+        },
+      }),
+    );
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+
+    throw new ApiError(
+      error.statusCode || 500,
+      error.message || "Something went wrong",
+    );
+  }
+});
 
 export {
   createSubtask,
-  // getSubtasks
   getSubtaskById,
   updateSubtask,
   deleteSubtask,
   getAllSubtasksByTaskId,
-  // getAllSubtasksByProjectId,
+  getAllSubtasksByProjectId,
 };

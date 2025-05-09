@@ -162,10 +162,39 @@ const getSubtaskByIdValidator = () => {
   ];
 };
 
+const getAllSubtasksByProjectIdValidator = () => {
+  return [
+    param("projectId")
+      .notEmpty()
+      .withMessage("Project ID is required")
+      .isMongoId()
+      .withMessage("Invalid Project ID format"),
+    query("isCompleted")
+      .optional()
+      .isBoolean()
+      .withMessage("isCompleted must be a boolean"),
+    query("priority")
+      .optional()
+      .isString()
+      .withMessage("Priority must be a string")
+      .isIn(AvailableSubtaskPriorities)
+      .withMessage("Invalid subtask priority"),
+    query("page")
+      .optional()
+      .isInt({ min: 1 })
+      .withMessage("Page must be a positive integer"),
+    query("limit")
+      .optional()
+      .isInt({ min: 1 })
+      .withMessage("Limit must be a positive integer"),
+  ];
+};
+
 export {
   createSubtaskValidator,
   updateSubtaskValidator,
   deleteSubtaskValidator,
   getAllSubtasksByTaskIdValidator,
   getSubtaskByIdValidator,
+  getAllSubtasksByProjectIdValidator,
 };
