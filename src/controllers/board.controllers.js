@@ -204,6 +204,62 @@ const getBoardById = asyncHandler(async (req, res) => {
 
 const updateBoard = asyncHandler(async (req, res) => {});
 
-const deleteBoard = asyncHandler(async (req, res) => {});
+const deleteBoard = asyncHandler(async (req, res) => {
+  // 1. Extract board ID and project ID from request params
+  const { boardId, projectId } = req.params;
+
+  // 2. Extract user ID from request object
+  const userId = req.user._id;
+
+  try {
+    // 3. Check if the project exists
+    const project = await Project.findById(projectId);
+    if (!project) {
+      throw new ApiError(404, "Project not found");
+    }
+
+    // 4. Check if the board exists
+    const board = await Board.findOne({
+      _id: boardId,
+      projectId,
+      deleted: false, // Exclude deleted boards
+    });
+    if (!board) {
+      throw new ApiError(404, "Board not found");
+    }
+
+    // 5. Chekc if the user is member of the project
+    const userMembership = await ProjectMember.findOne({
+      projectId,
+      userId,
+    });
+    if (!userMembership) {
+      throw new ApiError(403, "You don't have permission to delete this board");
+    }
+
+    // 6. Restrict MEMBER role from deleting boards
+    if (userMembership.role === "project_member") {
+      throw new ApiError(403, "You don't have permission to delete this board");
+    }
+
+    // 7. Soft delete the board
+    board.deleted = true;
+    await board.save();
+
+    // 8. Send a success response
+    return res.status(200).json(
+      new ApiResponse(200, "Board deleted successfully", {
+        boardId: board._id,
+      }),
+    );
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+
+    throw new ApiError(
+      error.statusCode || 500,
+      error.message || "Something went wrong",
+    );
+  }
+});
 
 export { createBoard, getAllBoards, getBoardById, updateBoard, deleteBoard };
