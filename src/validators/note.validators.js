@@ -127,10 +127,68 @@ const deleteNoteValidator = () => {
   ];
 };
 
+const getNoteAnalyticsValidator = () => {
+  return [
+    param("projectId")
+      .notEmpty()
+      .withMessage("Project ID is required")
+      .isMongoId()
+      .withMessage("Invalid Project ID format"),
+    param("taskId")
+      .optional()
+      .isMongoId()
+      .withMessage("Invalid Task ID format"),
+    query("visibility")
+      .optional()
+      .isString()
+      .withMessage("Visibility must be a string")
+      .isIn(AvailableNoteVisibilities)
+      .withMessage("Invalid note visibility"),
+  ];
+};
+
+const searchNotesValidator = () => {
+  return [
+    param("projectId")
+      .notEmpty()
+      .withMessage("Project ID is required")
+      .isMongoId()
+      .withMessage("Invalid Project ID format"),
+    param("taskId")
+      .optional()
+      .isMongoId()
+      .withMessage("Invalid Task ID format"),
+    query("query")
+      .optional()
+      .isString()
+      .withMessage("Search query must be a string"),
+    query("visibility")
+      .optional()
+      .isString()
+      .withMessage("Visibility must be a string")
+      .isIn(AvailableNoteVisibilities)
+      .withMessage("Invalid note visibility"),
+    query("createdBy")
+      .optional()
+      .isMongoId()
+      .withMessage("Created by must be a valid user ID"),
+    query("page")
+      .optional()
+      .isInt({ min: 1 })
+      .withMessage("Page must be a positive integer"),
+    query("limit")
+      .optional()
+      .isInt({ min: 1 })
+      .withMessage("Limit must be a positive integer"),
+  ];
+};
+
 export {
   createNoteValidator,
   getNotesValidator,
   getNoteByIdValidator,
   updateNoteValidator,
   deleteNoteValidator,
+  getNoteAnalyticsValidator,
+  searchNotesValidator,
 };

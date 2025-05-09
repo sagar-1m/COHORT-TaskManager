@@ -369,7 +369,164 @@ const deleteNote = asyncHandler(async (req, res) => {
   }
 });
 
-const getNoteAnalytics = asyncHandler(async (req, res) => {});
+const getNoteAnalytics = asyncHandler(async (req, res) => {
+  // 1. Extract projectId and taskId from the request params
+  const { projectId, taskId } = req.params;
+
+  // 2. Extract user ID from request object
+  const userId = req.user._id;
+
+  try {
+    // 3. Check if the project exists
+    const project = await Project.findById(projectId);
+    if (!project) {
+      throw new ApiError(404, "Project not found");
+    }
+
+    // 4. Check if the user is a member of the project
+    const userMembership = await ProjectMember.findOne({
+      projectId,
+      userId,
+    });
+    if (!userMembership) {
+      throw new ApiError(403, "User is not a member of the project");
+    }
+
+    // 5. Build the query for fetching note analytics
+    const query = { projectId, deleted: false };
+    if (taskId) {
+      query.taskId = taskId;
+    }
+
+    // 6. Fetch note analytics from the database
+    const totalNotes = await ProjectNote.countDocuments(query);
+    const publicNotes = await ProjectNote.countDocuments({
+      ...query,
+      visibility: "public",
+    });
+    const privateNotes = await ProjectNote.countDocuments({
+      ...query,
+      visibility: "private",
+    });
+
+    // 8. Send success response
+    const responseData = {
+      totalNotes,
+      publicNotes,
+      privateNotes,
+    };
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          "Note analytics fetched successfully",
+          responseData,
+        ),
+      );
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+
+    throw new ApiError(
+      error.statusCode || 500,
+      error.message || "Something went wrong",
+    );
+  }
+});
+
+// const searchNotes = asyncHandler(async (req, res) => {
+//   // 1. Extract projectId and taskId from the request params
+//   const { projectId, taskId } = req.params;
+
+//   // 2. Extract user ID from request object
+//   const userId = req.user._id;
+
+//   // 3. Extract search query from request body
+//   const { query, visibility, createdBy, page, limit } = req.body;
+
+//   try {
+//     // 4. Check if the project exists
+//     const project = await Project.findById(projectId);
+//     if (!project) {
+//       throw new ApiError(404, "Project not found");
+//     }
+
+//     // 5. Check if the user is a member of the project
+//     const userMembership = await ProjectMember.findOne({
+//       projectId,
+//       userId,
+//     });
+//     if (!userMembership) {
+//       throw new ApiError(403, "User is not a member of the project");
+//     }
+
+//     // 6. Build the query for searching notes
+//     const searchQuery = {
+//       projectId,
+//       deleted: false,
+//     };
+//     if (taskId) {
+//       searchQuery.taskId = taskId;
+//     }
+//     if (query && typeof query === "string") {
+//       searchQuery.content = { $regex: query, $options: "i" };
+//     }
+//     if (visibility) {
+//       searchQuery.visibility = visibility;
+//     }
+//     if (createdBy) {
+//       searchQuery.createdBy = createdBy;
+//     }
+
+//     // 7. enforce visibility restrictions based on user role
+//     if (visibility === "private") {
+//       if (userMembership.role === "project_admin") {
+//         searchQuery.visibility = "private";
+//       } else {
+//         searchQuery.visibility = "private";
+//         searchQuery.createdBy = userId;
+//       }
+//     } else if (visibility) {
+//       searchQuery.visibility = visibility;
+//     }
+
+//     // 8. Handle pagination
+//     const pageNumber = parseInt(page, 10) || 1;
+//     const pageSize = parseInt(limit, 10) || 10;
+//     const skip = (pageNumber - 1) * pageSize;
+
+//     // 9. Fetch notes from the database
+//     const notes = await ProjectNote.find(searchQuery)
+//       .skip(skip)
+//       .limit(pageSize)
+//       .populate("createdBy", "name email")
+//       .sort({ createdAt: -1 });
+
+//     // 10. Get the total count of notes for pagination
+//     const totalNotes = await ProjectNote.countDocuments(searchQuery);
+
+//     // 11. Send success response
+//     return res.status(200).json(
+//       new ApiResponse(200, "Notes fetched successfully", {
+//         notes,
+//         pagination: {
+//           totalNotes,
+//           totalPages: Math.ceil(totalNotes / pageSize),
+//           currentPage: pageNumber,
+//           pageSize,
+//         },
+//       }),
+//     );
+//   } catch (error) {
+//     if (error instanceof ApiError) throw error;
+
+//     throw new ApiError(
+//       error.statusCode || 500,
+//       error.message || "Something went wrong",
+//     );
+//   }
+// });
 
 export {
   createNote,
@@ -378,4 +535,5 @@ export {
   updateNote,
   deleteNote,
   getNoteAnalytics,
+  searchNotes,
 };

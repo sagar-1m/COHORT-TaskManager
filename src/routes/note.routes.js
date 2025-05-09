@@ -4,15 +4,19 @@ import { validate } from "../middlewares/validator.middlewares.js";
 import {
   createNoteValidator,
   deleteNoteValidator,
+  getNoteAnalyticsValidator,
   getNoteByIdValidator,
   getNotesValidator,
+  searchNotesValidator,
   updateNoteValidator,
 } from "../validators/note.validators.js";
 import {
   createNote,
   deleteNote,
+  getNoteAnalytics,
   getNoteById,
   getNotes,
+  searchNotes,
   updateNote,
 } from "../controllers/note.controllers.js";
 
@@ -39,5 +43,13 @@ router
 router
   .route("/:projectId/:taskId?/delete-note/:noteId")
   .delete(deleteNoteValidator(), validate, deleteNote);
+
+router
+  .route("/:projectId/:taskId?/note-analytics")
+  .get(getNoteAnalyticsValidator(), validate, getNoteAnalytics);
+
+router
+  .route("/:projectId/:taskId?/search-notes")
+  .get(searchNotesValidator(), validate, searchNotes);
 
 export default router;
