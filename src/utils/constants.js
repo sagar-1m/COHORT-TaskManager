@@ -61,3 +61,10 @@ export const SubtaskPriorityEnum = {
 };
 
 export const AvailableSubtaskPriorities = Object.values(SubtaskPriorityEnum);
+
+export const NoteVisibilityEnum = {
+  PUBLIC: "public",
+  PRIVATE: "private",
+};
+
+export const AvailableNoteVisibilities = Object.values(NoteVisibilityEnum);
