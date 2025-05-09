@@ -10,6 +10,7 @@ import projectRouter from "./routes/project.routes.js";
 import taskRouter from "./routes/task.routes.js";
 import boardRouter from "./routes/board.routes.js";
 import subtaskRouter from "./routes/subtask.routes.js";
+import noteRouter from "./routes/note.routes.js";
 import { ApiError } from "./utils/api-error.js";
 
 const app = express();
@@ -28,6 +29,7 @@ app.use("/api/v1/projects", projectRouter);
 app.use("/api/v1/tasks", taskRouter);
 app.use("/api/v1/boards", boardRouter);
 app.use("/api/v1/subtasks", subtaskRouter);
+app.use("/api/v1/notes", noteRouter);
 
 // Global error handler
 app.use((err, req, res, next) => {
