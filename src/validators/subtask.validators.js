@@ -1,0 +1,44 @@
+import { body, param } from "express-validator";
+import { AvailableSubtaskPriorities } from "../utils/constants.js";
+
+const createSubtaskValidator = () => {
+  return [
+    param("taskId")
+      .notEmpty()
+      .withMessage("Task ID is required")
+      .isMongoId()
+      .withMessage("Invalid Task ID format"),
+    param("projectId")
+      .notEmpty()
+      .withMessage("Project ID is required")
+      .isMongoId()
+      .withMessage("Invalid Project ID format"),
+    body("title")
+      .notEmpty()
+      .withMessage("Title is required")
+      .isString()
+      .withMessage("Title must be a string")
+      .trim()
+      .isLength({ min: 3, max: 100 })
+      .withMessage("Subtask Title must be between 3 and 100 characters"),
+    body("description")
+      .optional()
+      .isString()
+      .withMessage("Description must be a string")
+      .trim()
+      .isLength({ max: 500 })
+      .withMessage("Description must be less than 500 characters"),
+    body("dueDate")
+      .optional()
+      .isISO8601()
+      .withMessage("Due date must be a valid ISO 8601 date string"),
+    body("priority")
+      .optional()
+      .isString()
+      .withMessage("Priority must be a string")
+      .isIn(AvailableSubtaskPriorities)
+      .withMessage("Invalid subtask priority"),
+  ];
+};
+
+export { createSubtaskValidator };
