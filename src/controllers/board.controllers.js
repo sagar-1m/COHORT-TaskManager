@@ -141,4 +141,69 @@ const getAllBoards = asyncHandler(async (req, res) => {
   }
 });
 
-export { createBoard, getAllBoards };
+const getBoardById = asyncHandler(async (req, res) => {
+  // 1. Extract board ID and project ID from request params
+  const { boardId, projectId } = req.params;
+
+  // 2. Extract user ID from request object
+  const userId = req.user._id;
+
+  try {
+    // 3. Check if the project exists
+    const project = await Project.findById(projectId);
+    if (!project) {
+      throw new ApiError(404, "Project not found");
+    }
+
+    // 4. Check if the board exists
+    const board = await Board.findOne({
+      _id: boardId,
+      projectId,
+      deleted: false, // Exclude deleted boards
+    }).populate("createdBy", "name email");
+    if (!board) {
+      throw new ApiError(404, "Board not found");
+    }
+
+    // 5. Check if the user is a project member
+    const userMembership = await ProjectMember.findOne({
+      projectId,
+      userId,
+    });
+    if (!userMembership) {
+      throw new ApiError(403, "You don't have permission to view this board");
+    }
+
+    // 6. Fetch tasks associated with the board
+    const tasks = await Task.find({
+      projectId,
+      status: board.status,
+    })
+      .populate("assignedTo", "name email")
+      .populate("createdBy", "name email")
+      .populate("updatedBy", "name email");
+
+    // 7. Return the board and its tasks in the response
+    return res.status(200).json(
+      new ApiResponse(200, "Board and tasks fetched successfully", {
+        board: {
+          ...board.toObject(),
+          tasks,
+        },
+      }),
+    );
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+
+    throw new ApiError(
+      error.statusCode || 500,
+      error.message || "Something went wrong",
+    );
+  }
+});
+
+const updateBoard = asyncHandler(async (req, res) => {});
+
+const deleteBoard = asyncHandler(async (req, res) => {});
+
+export { createBoard, getAllBoards, getBoardById, updateBoard, deleteBoard };

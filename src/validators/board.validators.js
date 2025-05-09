@@ -37,4 +37,19 @@ const getAllBoardsValidator = () => {
   ];
 };
 
-export { createBoardValidator, getAllBoardsValidator };
+const getBoardByIdValidator = () => {
+  return [
+    param("boardId")
+      .notEmpty()
+      .withMessage("Board ID is required")
+      .isMongoId()
+      .withMessage("Invalid Board ID format"),
+    param("projectId")
+      .notEmpty()
+      .withMessage("Project ID is required")
+      .isMongoId()
+      .withMessage("Invalid Project ID format"),
+  ];
+};
+
+export { createBoardValidator, getAllBoardsValidator, getBoardByIdValidator };

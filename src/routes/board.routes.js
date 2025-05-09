@@ -4,8 +4,13 @@ import { validate } from "../middlewares/validator.middlewares.js";
 import {
   createBoardValidator,
   getAllBoardsValidator,
+  getBoardByIdValidator,
 } from "../validators/board.validators.js";
-import { createBoard, getAllBoards } from "../controllers/board.controllers.js";
+import {
+  createBoard,
+  getAllBoards,
+  getBoardById,
+} from "../controllers/board.controllers.js";
 
 const router = Router();
 
@@ -18,5 +23,9 @@ router
 router
   .route("/:projectId/get-boards")
   .get(getAllBoardsValidator(), validate, getAllBoards);
+
+router
+  .route("/:projectId/get-board/:boardId")
+  .get(getBoardByIdValidator(), validate, getBoardById);
 
 export default router;
