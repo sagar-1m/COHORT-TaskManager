@@ -76,4 +76,41 @@ const getNoteByIdValidator = () => {
   ];
 };
 
-export { createNoteValidator, getNotesValidator, getNoteByIdValidator };
+const updateNoteValidator = () => {
+  return [
+    param("projectId")
+      .notEmpty()
+      .withMessage("Project ID is required")
+      .isMongoId()
+      .withMessage("Invalid Project ID format"),
+    param("taskId")
+      .optional()
+      .isMongoId()
+      .withMessage("Invalid Task ID format"),
+    param("noteId")
+      .notEmpty()
+      .withMessage("Note ID is required")
+      .isMongoId()
+      .withMessage("Invalid Note ID format"),
+    body("content")
+      .optional()
+      .isString()
+      .withMessage("Note content must be a string")
+      .trim()
+      .isLength({ min: 3, max: 1000 })
+      .withMessage("Note content must be between 1 and 1000 characters"),
+    body("visibility")
+      .optional()
+      .isString()
+      .withMessage("Visibility must be a string")
+      .isIn(AvailableNoteVisibilities)
+      .withMessage("Invalid note visibility"),
+  ];
+};
+
+export {
+  createNoteValidator,
+  getNotesValidator,
+  getNoteByIdValidator,
+  updateNoteValidator,
+};

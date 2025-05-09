@@ -5,11 +5,13 @@ import {
   createNoteValidator,
   getNoteByIdValidator,
   getNotesValidator,
+  updateNoteValidator,
 } from "../validators/note.validators.js";
 import {
   createNote,
   getNoteById,
   getNotes,
+  updateNote,
 } from "../controllers/note.controllers.js";
 
 const router = Router();
@@ -27,5 +29,9 @@ router
 router
   .route("/:projectId/:taskId?/get-note/:noteId")
   .get(getNoteByIdValidator(), validate, getNoteById);
+
+router
+  .route("/:projectId/:taskId?/update-note/:noteId")
+  .patch(updateNoteValidator(), validate, updateNote);
 
 export default router;

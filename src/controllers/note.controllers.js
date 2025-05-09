@@ -236,7 +236,74 @@ const getNoteById = asyncHandler(async (req, res) => {
   }
 });
 
-const updateNote = asyncHandler(async (req, res) => {});
+const updateNote = asyncHandler(async (req, res) => {
+  // 1. Extract projectId, taskId, and noteId from the request params
+  const { projectId, taskId, noteId } = req.params;
+
+  // 2. Extract user ID from request object
+  const userId = req.user._id;
+
+  // 3. Extract note data from request body
+  const { content, visibility } = req.body;
+
+  try {
+    // 4. Check if the project exists
+    const project = await Project.findById(projectId);
+    if (!project) {
+      throw new ApiError(404, "Project not found");
+    }
+
+    // 5. Check if the user is a member of the project
+    const userMembership = await ProjectMember.findOne({
+      projectId,
+      userId,
+    });
+    if (!userMembership) {
+      throw new ApiError(403, "User is not a member of the project");
+    }
+
+    // 6. Fetch the note from the database
+    const note = await ProjectNote.findById(noteId);
+    if (!note || note.projectId.toString() !== projectId) {
+      throw new ApiError(404, "Note not found in the project");
+    }
+
+    // Validate task association if taskId is provided
+    if (taskId) {
+      if (!note.taskId || note.taskId.toString() !== taskId) {
+        throw new ApiError(404, "Note not found in the specified task");
+      }
+    }
+
+    // 7. Enforce RBAC for updating notes
+    if (
+      userMembership.role !== "project_admin" &&
+      note.createdBy.toString() !== userId
+    ) {
+      throw new ApiError(403, "You do not have permission to update this note");
+    }
+
+    // 8. Update the note
+    note.content = content ? content.trim() : note.content;
+    note.visibility = visibility || note.visibility;
+
+    await note.save();
+
+    // 9. Send success response
+    return res.status(200).json(
+      new ApiResponse(200, "Note updated successfully", {
+        note,
+      }),
+    );
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+
+    throw new ApiError(
+      error.statusCode || 500,
+      error.message || "Something went wrong",
+    );
+  }
+});
 
 const deleteNote = asyncHandler(async (req, res) => {});
 
