@@ -3,9 +3,14 @@ import { authMiddleware } from "../middlewares/auth.middlewares.js";
 import { validate } from "../middlewares/validator.middlewares.js";
 import {
   createNoteValidator,
+  getNoteByIdValidator,
   getNotesValidator,
 } from "../validators/note.validators.js";
-import { createNote, getNotes } from "../controllers/note.controllers.js";
+import {
+  createNote,
+  getNoteById,
+  getNotes,
+} from "../controllers/note.controllers.js";
 
 const router = Router();
 
@@ -18,5 +23,9 @@ router
 router
   .route("/:projectId/:taskId?/get-notes")
   .get(getNotesValidator(), validate, getNotes);
+
+router
+  .route("/:projectId/:taskId?/get-note/:noteId")
+  .get(getNoteByIdValidator(), validate, getNoteById);
 
 export default router;

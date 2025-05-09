@@ -56,4 +56,24 @@ const getNotesValidator = () => {
       .withMessage("Limit must be a positive integer"),
   ];
 };
-export { createNoteValidator, getNotesValidator };
+
+const getNoteByIdValidator = () => {
+  return [
+    param("projectId")
+      .notEmpty()
+      .withMessage("Project ID is required")
+      .isMongoId()
+      .withMessage("Invalid Project ID format"),
+    param("taskId")
+      .optional()
+      .isMongoId()
+      .withMessage("Invalid Task ID format"),
+    param("noteId")
+      .notEmpty()
+      .withMessage("Note ID is required")
+      .isMongoId()
+      .withMessage("Invalid Note ID format"),
+  ];
+};
+
+export { createNoteValidator, getNotesValidator, getNoteByIdValidator };

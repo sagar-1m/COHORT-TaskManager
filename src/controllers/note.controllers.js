@@ -167,7 +167,74 @@ const getNotes = asyncHandler(async (req, res) => {
   }
 });
 
-const getNoteById = asyncHandler(async (req, res) => {});
+const getNoteById = asyncHandler(async (req, res) => {
+  // 1. Extract projectId, taskId, and noteId from the request params
+  const { projectId, taskId, noteId } = req.params;
+
+  // 2. Extract user ID from request object
+  const userId = req.user._id;
+
+  try {
+    // 3. Check if the project exists
+    const project = await Project.findById(projectId);
+    if (!project) {
+      throw new ApiError(404, "Project not found");
+    }
+
+    // 4. Check if the user is a member of the project
+    const userMembership = await ProjectMember.findOne({
+      projectId,
+      userId,
+    });
+    if (!userMembership) {
+      throw new ApiError(403, "User is not a member of the project");
+    }
+
+    // 5. Fetch the note from the database
+    const note = await ProjectNote.findById(noteId).populate(
+      "createdBy",
+      "name email",
+    );
+    if (!note || note.projectId.toString() !== projectId) {
+      throw new ApiError(404, "Note not found in the project");
+    }
+
+    // Validate task association if taskId is provided
+    if (taskId) {
+      if (!note.taskId || note.taskId.toString() !== taskId) {
+        throw new ApiError(404, "Note not found in the specified task");
+      }
+    }
+
+    // 6. Enforce visibility restrictions based on user role
+    if (note.visibility === "private") {
+      if (
+        userMembership.role !== "project_admin" &&
+        note.createdBy.toString() !== userId
+      ) {
+        throw new ApiError(403, "You do not have permission to view this note");
+      }
+    } else if (note.visibility === "public") {
+      // Public notes are accessible to all project members
+    } else {
+      throw new ApiError(400, "Invalid note visibility");
+    }
+
+    // 7. Send success response
+    return res.status(200).json(
+      new ApiResponse(200, "Note fetched successfully", {
+        note,
+      }),
+    );
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+
+    throw new ApiError(
+      error.statusCode || 500,
+      error.message || "Something went wrong",
+    );
+  }
+});
 
 const updateNote = asyncHandler(async (req, res) => {});
 
