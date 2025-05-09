@@ -86,7 +86,92 @@ const getSubtasks = asyncHandler(async (req, res) => {});
 
 const getSubtaskById = asyncHandler(async (req, res) => {});
 
-const updateSubtask = asyncHandler(async (req, res) => {});
+const updateSubtask = asyncHandler(async (req, res) => {
+  // 1. Extract subtaskId, taskId, and projectId from the request params
+  const { subtaskId, taskId, projectId } = req.params;
+
+  // 2. Extract user ID from request object
+  const userId = req.user._id;
+
+  // 3. Extract update data from request body
+  const { title, description, dueDate, priority, isCompleted } = req.body;
+
+  try {
+    // 4. Check if the project exists
+    const project = await Project.findById(projectId);
+    if (!project) {
+      throw new ApiError(404, "Project not found");
+    }
+
+    // 5. Check if the task exists
+    const task = await Task.findOne({
+      _id: taskId,
+      projectId,
+    });
+    if (!task) {
+      throw new ApiError(404, "Task not found");
+    }
+
+    // 6. Check if the subtask exists
+    const subtask = await Subtask.findOne({
+      _id: subtaskId,
+      taskId,
+      projectId,
+    });
+    if (!subtask) {
+      throw new ApiError(404, "Subtask not found");
+    }
+
+    // 7. Check if the user is a member of the project
+    const userMembership = await ProjectMember.findOne({
+      projectId,
+      userId,
+    });
+    if (!userMembership) {
+      throw new ApiError(403, "You don't have permission to update subtasks");
+    }
+
+    // 8. Restrict MEMBER role from updating subtasks they don't own or that are not assigned to them
+    if (userMembership.role === "member") {
+      const isSubtaskOwner = subtask.createdBy.toString() === userId.toString();
+      const isTaskAssignedToUser = task.assignedTo.includes(userId);
+
+      if (!isSubtaskOwner && !isTaskAssignedToUser) {
+        throw new ApiError(
+          403,
+          "Members can only update their own subtasks or those assigned to them",
+        );
+      }
+    }
+
+    // 9. Update the subtask fields
+    subtask.title = title ? title.trim() : subtask.title;
+    subtask.description = description
+      ? description.trim()
+      : subtask.description;
+    subtask.dueDate = dueDate ? new Date(dueDate) : subtask.dueDate;
+    subtask.priority = priority || subtask.priority;
+    subtask.isCompleted =
+      typeof isCompleted === "boolean" ? isCompleted : subtask.isCompleted;
+    subtask.updatedBy = userId;
+
+    await subtask.save();
+
+    // 10. Respond with the updated subtask
+    return res.status(200).json(
+      new ApiResponse(200, "Subtask updated successfully", {
+        subtask,
+      }),
+    );
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+
+    throw new ApiError(
+      error.statusCode || 500,
+      error.message || "Something went wrong",
+    );
+  }
+});
 
 const deleteSubtask = asyncHandler(async (req, res) => {});
 
@@ -98,7 +183,7 @@ export {
   createSubtask,
   // getSubtasks
   // getSubtaskById,
-  // updateSubtask,
+  updateSubtask,
   // deleteSubtask,
   // getAllSubtasksByTaskId,
   // getAllSubtasksByProjectId,
