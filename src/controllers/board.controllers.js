@@ -202,8 +202,6 @@ const getBoardById = asyncHandler(async (req, res) => {
   }
 });
 
-const updateBoard = asyncHandler(async (req, res) => {});
-
 const deleteBoard = asyncHandler(async (req, res) => {
   // 1. Extract board ID and project ID from request params
   const { boardId, projectId } = req.params;
@@ -238,7 +236,7 @@ const deleteBoard = asyncHandler(async (req, res) => {
     }
 
     // 6. Restrict MEMBER role from deleting boards
-    if (userMembership.role === "project_member") {
+    if (userMembership.role === "member") {
       throw new ApiError(403, "You don't have permission to delete this board");
     }
 
@@ -262,4 +260,4 @@ const deleteBoard = asyncHandler(async (req, res) => {
   }
 });
 
-export { createBoard, getAllBoards, getBoardById, updateBoard, deleteBoard };
+export { createBoard, getAllBoards, getBoardById, deleteBoard };
