@@ -1,4 +1,4 @@
-import { body, param } from "express-validator";
+import { body, param, query } from "express-validator";
 import { AvailableSubtaskPriorities } from "../utils/constants.js";
 
 const createSubtaskValidator = () => {
@@ -89,4 +89,62 @@ const updateSubtaskValidator = () => {
   ];
 };
 
-export { createSubtaskValidator, updateSubtaskValidator };
+const deleteSubtaskValidator = () => {
+  return [
+    param("subtaskId")
+      .notEmpty()
+      .withMessage("Subtask ID is required")
+      .isMongoId()
+      .withMessage("Invalid Subtask ID format"),
+    param("taskId")
+      .notEmpty()
+      .withMessage("Task ID is required")
+      .isMongoId()
+      .withMessage("Invalid Task ID format"),
+    param("projectId")
+      .notEmpty()
+      .withMessage("Project ID is required")
+      .isMongoId()
+      .withMessage("Invalid Project ID format"),
+  ];
+};
+
+const getAllSubtasksByTaskIdValidator = () => {
+  return [
+    param("taskId")
+      .notEmpty()
+      .withMessage("Task ID is required")
+      .isMongoId()
+      .withMessage("Invalid Task ID format"),
+    param("projectId")
+      .notEmpty()
+      .withMessage("Project ID is required")
+      .isMongoId()
+      .withMessage("Invalid Project ID format"),
+    query("isCompleted")
+      .optional()
+      .isBoolean()
+      .withMessage("isCompleted must be a boolean"),
+    query("priority")
+      .optional()
+      .isString()
+      .withMessage("Priority must be a string")
+      .isIn(AvailableSubtaskPriorities)
+      .withMessage("Invalid subtask priority"),
+    query("page")
+      .optional()
+      .isInt({ min: 1 })
+      .withMessage("Page must be a positive integer"),
+    query("limit")
+      .optional()
+      .isInt({ min: 1 })
+      .withMessage("Limit must be a positive integer"),
+  ];
+};
+
+export {
+  createSubtaskValidator,
+  updateSubtaskValidator,
+  deleteSubtaskValidator,
+  getAllSubtasksByTaskIdValidator,
+};
