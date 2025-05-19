@@ -443,7 +443,7 @@ const searchNotes = asyncHandler(async (req, res) => {
   const userId = req.user._id;
 
   // 3. Extract search query from request body
-  const { query, visibility, createdBy, page, limit } = req.body;
+  const { query, visibility, createdBy, page, limit } = req.query;
 
   try {
     // 4. Check if the project exists
