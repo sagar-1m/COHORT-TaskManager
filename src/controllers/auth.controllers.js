@@ -449,14 +449,20 @@ const resetPassword = asyncHandler(async (req, res) => {
     user.password = password;
     user.forgotPasswordToken = undefined;
     user.forgotPasswordTokenExpiry = undefined;
-
     user.refreshToken = undefined; // invalidate all active sessions
 
     await user.save({ validateBeforeSave: false });
 
-    // 7. Send success response
+    // 7. Expire cookies immediately after password reset
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV !== "development" ? false : true,
+    };
+
     return res
       .status(200)
+      .cookie("accessToken", "", { ...cookieOptions, expires: new Date(0) })
+      .cookie("refreshToken", "", { ...cookieOptions, expires: new Date(0) })
       .json(
         new ApiResponse(
           200,
@@ -736,6 +742,15 @@ const deleteUser = asyncHandler(async (req, res) => {
     );
 
     // Finally, delete the user account
+    // Delete avatar from Cloudinary if present
+    if (user.avatar && user.avatar.publicId) {
+      try {
+        await cloudinary.uploader.destroy(user.avatar.publicId);
+      } catch (err) {
+        // Log error but do not block deletion
+        console.error("Failed to delete avatar from Cloudinary:", err);
+      }
+    }
     await User.findByIdAndDelete(userId);
 
     // 8. Clear cookies
