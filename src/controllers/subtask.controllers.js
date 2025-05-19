@@ -110,6 +110,7 @@ const getSubtaskById = asyncHandler(async (req, res) => {
       _id: subtaskId,
       taskId,
       projectId,
+      deleted: false,
     })
       .populate("createdBy", "username email avatar")
       .populate("updatedBy", "username email avatar");
@@ -173,6 +174,7 @@ const updateSubtask = asyncHandler(async (req, res) => {
       _id: subtaskId,
       taskId,
       projectId,
+      deleted: false,
     });
     if (!subtask) {
       throw new ApiError(404, "Subtask not found");
@@ -257,6 +259,7 @@ const deleteSubtask = asyncHandler(async (req, res) => {
       _id: subtaskId,
       taskId,
       projectId,
+      deleted: false,
     });
     if (!subtask) {
       throw new ApiError(404, "Subtask not found");
@@ -276,8 +279,9 @@ const deleteSubtask = asyncHandler(async (req, res) => {
       throw new ApiError(403, "Members are not allowed to delete subtasks");
     }
 
-    // 8. Delete the subtask
-    await Subtask.findByIdAndDelete(subtaskId);
+    // 8. Soft delete the subtask
+    subtask.deleted = true;
+    await subtask.save();
 
     // 9. Respond with a success message
     return res.status(200).json(
@@ -334,6 +338,7 @@ const getAllSubtasksByTaskId = asyncHandler(async (req, res) => {
     const query = {
       taskId,
       projectId,
+      deleted: false,
     };
     if (isCompleted !== undefined) {
       query.isCompleted = isCompleted === "true";
@@ -412,6 +417,7 @@ const getAllSubtasksByProjectId = asyncHandler(async (req, res) => {
     // 6. Build the query object for filtering subtasks
     const query = {
       projectId,
+      deleted: false,
     };
     if (isCompleted !== undefined) {
       query.isCompleted = isCompleted === "true";

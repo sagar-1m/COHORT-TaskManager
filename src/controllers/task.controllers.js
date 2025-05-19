@@ -130,7 +130,7 @@ const getTasks = asyncHandler(async (req, res) => {
     }
 
     // 6. Build the query object for filtering tasks
-    const query = { projectId };
+    const query = { projectId, deleted: false }; // Exclude deleted tasks by default
 
     if (status) {
       query.status = status;
@@ -218,6 +218,7 @@ const getTaskById = asyncHandler(async (req, res) => {
     const task = await Task.findOne({
       _id: taskId,
       projectId,
+      deleted: false, // Exclude deleted tasks
     })
       .populate("assignedTo", "username email avatar")
       .populate("createdBy", "username email avatar")
@@ -273,6 +274,7 @@ const assignTask = asyncHandler(async (req, res) => {
     const task = await Task.findOne({
       _id: taskId,
       projectId,
+      deleted: false, // Exclude deleted tasks
     });
     if (!task) {
       throw new ApiError(404, "Task not found");
@@ -357,7 +359,11 @@ const getBoardTasks = asyncHandler(async (req, res) => {
     }
 
     // 7. Build the query object for filtering tasks
-    const query = { projectId: board.projectId._id, status: board.status };
+    const query = {
+      projectId: board.projectId._id,
+      status: board.status,
+      deleted: false,
+    }; // Exclude deleted tasks by default
 
     if (priority) {
       query.priority = priority;
@@ -436,6 +442,7 @@ const updateTask = asyncHandler(async (req, res) => {
     const task = await Task.findOne({
       _id: taskId,
       projectId,
+      deleted: false, // Exclude deleted tasks
     });
     if (!task) {
       throw new ApiError(404, "Task not found");
@@ -525,6 +532,7 @@ const deleteTask = asyncHandler(async (req, res) => {
     const task = await Task.findOne({
       _id: taskId,
       projectId,
+      deleted: false, // Exclude deleted tasks
     });
     if (!task) {
       throw new ApiError(404, "Task not found");
@@ -544,10 +552,56 @@ const deleteTask = asyncHandler(async (req, res) => {
       throw new ApiError(403, "Members cannot delete tasks");
     }
 
-    // 7. Delete the task
-    await Task.findByIdAndDelete(taskId);
+    // 7. Soft delete the task
+    task.deleted = true;
+    task.updatedBy = userId;
+    await task.save();
 
-    // 8. Return success response
+    // 8. Remove task from the board if it exists
+    const board = await Board.findOne({
+      projectId,
+      taskId,
+    });
+    if (board) {
+      await Board.deleteOne({
+        projectId,
+        taskId,
+      });
+    }
+
+    // 9. Remove task from the project if it exists
+    const projectTask = await Project.findOne({
+      _id: projectId,
+      tasks: taskId,
+    });
+    if (projectTask) {
+      await Project.updateOne(
+        {
+          _id: projectId,
+        },
+        {
+          $pull: { tasks: taskId },
+        },
+      );
+    }
+
+    // 10. Remove task from the project members if it exists
+    const projectMember = await ProjectMember.findOne({
+      projectId,
+      tasks: taskId,
+    });
+    if (projectMember) {
+      await ProjectMember.updateOne(
+        {
+          projectId,
+        },
+        {
+          $pull: { tasks: taskId },
+        },
+      );
+    }
+
+    // 10. Return success response
     return res.status(200).json(
       new ApiResponse(200, "Task deleted successfully", {
         taskId,

@@ -191,10 +191,11 @@ const getNoteById = asyncHandler(async (req, res) => {
     }
 
     // 5. Fetch the note from the database
-    const note = await ProjectNote.findById(noteId).populate(
-      "createdBy",
-      "username email avatar",
-    );
+    const note = await ProjectNote.findOne({
+      _id: noteId,
+      projectId,
+      deleted: false,
+    }).populate("createdBy", "username email avatar");
     if (!note || note.projectId.toString() !== projectId) {
       throw new ApiError(404, "Note not found in the project");
     }
@@ -263,7 +264,11 @@ const updateNote = asyncHandler(async (req, res) => {
     }
 
     // 6. Fetch the note from the database
-    const note = await ProjectNote.findById(noteId);
+    const note = await ProjectNote.findOne({
+      _id: noteId,
+      projectId,
+      deleted: false,
+    });
     if (!note || note.projectId.toString() !== projectId) {
       throw new ApiError(404, "Note not found in the project");
     }
@@ -329,7 +334,11 @@ const deleteNote = asyncHandler(async (req, res) => {
     }
 
     // 5. Fetch the note from the database
-    const note = await ProjectNote.findById(noteId);
+    const note = await ProjectNote.findOne({
+      _id: noteId,
+      projectId,
+      deleted: false,
+    });
     if (!note || note.projectId.toString() !== projectId) {
       throw new ApiError(404, "Note not found in the project");
     }

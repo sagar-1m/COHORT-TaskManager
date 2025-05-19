@@ -314,6 +314,7 @@ const getProjects = asyncHandler(async (req, res) => {
     // 2. Get all projects where the user is a member
     const projectMemberships = await ProjectMember.find({
       userId: userId,
+      deleted: false, // Exclude deleted memberships
     }).populate({
       path: "projectId",
       select: "name description status priority tags createdBy",
@@ -322,6 +323,12 @@ const getProjects = asyncHandler(async (req, res) => {
         select: "username email avatar",
       },
     });
+
+    // Filter out projects that are soft-deleted
+    const filteredMemberships = projectMemberships.filter(
+      (membership) =>
+        membership.projectId && membership.projectId.deleted !== true,
+    );
 
     // 3. Check if the user is a member of any projects
     if (projectMemberships.length === 0) {
@@ -334,14 +341,19 @@ const getProjects = asyncHandler(async (req, res) => {
     }
 
     // 4. Format the response data
-    const projects = projectMemberships.map((membership) => ({
+    const projects = filteredMemberships.map((membership) => ({
       _id: membership.projectId._id,
       name: membership.projectId.name,
       description: membership.projectId.description,
       status: membership.projectId.status,
       priority: membership.projectId.priority,
       tags: membership.projectId.tags,
-      createdBy: membership.projectId.createdBy,
+      createdBy: {
+        _id: membership.projectId.createdBy._id,
+        username: membership.projectId.createdBy.username,
+        email: membership.projectId.createdBy.email,
+        avatar: membership.projectId.createdBy.avatar,
+      },
       role: membership.role,
       joinedAt: membership.createdAt,
     }));
@@ -372,7 +384,10 @@ const getProjectById = asyncHandler(async (req, res) => {
 
   try {
     // 3. Check if the project exists
-    const project = await Project.findById(projectId);
+    const project = await Project.findOne({
+      _id: projectId,
+      deleted: false, // Exclude deleted projects
+    });
     if (!project) {
       throw new ApiError(404, "Project not found");
     }
@@ -426,7 +441,10 @@ const deleteProject = asyncHandler(async (req, res) => {
 
   try {
     // 3. Check if the project exists
-    const project = await Project.findById(projectId);
+    const project = await Project.findOne({
+      _id: projectId,
+      deleted: false, // Exclude deleted projects
+    });
     if (!project) {
       throw new ApiError(404, "Project not found");
     }
@@ -450,8 +468,9 @@ const deleteProject = asyncHandler(async (req, res) => {
     await Subtask.deleteMany({ projectId: project._id });
     await ProjectNote.deleteMany({ projectId: project._id });
 
-    // 6. Delete the project itself
-    await Project.findByIdAndDelete(project._id);
+    // 6. Soft delete the project
+    project.deleted = true;
+    await project.save();
 
     // 7. Return success response
     return res
@@ -550,7 +569,10 @@ const updateProject = asyncHandler(async (req, res) => {
 
   try {
     // 4. Check if the project exists
-    const project = await Project.findById(projectId);
+    const project = await Project.findOne({
+      _id: projectId,
+      deleted: false, // Exclude deleted projects
+    });
     if (!project) {
       throw new ApiError(404, "Project not found");
     }

@@ -587,6 +587,7 @@ const deleteUser = asyncHandler(async (req, res) => {
     // First, find all projects associated with the user
     const projects = await Project.find({
       createdBy: userId,
+      deleted: false,
     });
 
     // Delete project member for each project
@@ -598,28 +599,45 @@ const deleteUser = asyncHandler(async (req, res) => {
       // Delete tasks associated with the project
       const tasks = await Task.find({
         projectId: project._id,
+        deleted: false,
       });
       for (const task of tasks) {
         await SubTask.deleteMany({
           taskId: task._id,
+          deleted: false,
         });
       }
 
       // Delete all tasks
-      await Task.deleteMany({
-        projectId: project._id,
-      });
+      await Task.deleteMany(
+        {
+          projectId: project._id,
+        },
+        {
+          $set: { deleted: true },
+        },
+      );
 
       // Delete project notes
-      await ProjectNote.deleteMany({
-        projectId: project._id,
-      });
+      await ProjectNote.deleteMany(
+        {
+          projectId: project._id,
+        },
+        {
+          $set: { deleted: true },
+        },
+      );
     }
 
     // Delete all projects
-    await Project.deleteMany({
-      createdBy: userId,
-    });
+    await Project.deleteMany(
+      {
+        createdBy: userId,
+      },
+      {
+        $set: { deleted: true },
+      },
+    );
 
     // remove user from all project memberships
     await ProjectMember.deleteMany({
