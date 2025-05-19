@@ -49,13 +49,17 @@ const userSchema = new Schema(
       type: Date,
     },
     avatar: {
-      type: {
-        url: String,
-        localPath: String,
+      url: {
+        type: String,
+        default: "https://placehold.co/600x600",
       },
-      default: {
-        url: "https://placehold.co/600x600",
-        localPath: "",
+      publicId: {
+        type: String,
+        default: "",
+      },
+      localPath: {
+        type: String,
+        default: "",
       },
     },
     refreshToken: {

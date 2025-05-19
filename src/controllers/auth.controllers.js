@@ -15,6 +15,7 @@ import {
 } from "../utils/mail.js";
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
+import cloudinary from "../utils/cloudinary.js";
 
 const registerUser = asyncHandler(async (req, res) => {
   // 1. Get user data from request body
@@ -264,6 +265,90 @@ const getUserProfile = asyncHandler(async (req, res) => {
     throw new ApiError(
       error.statusCode || 500,
       error.message || "Something went wrong while fetching user profile",
+    );
+  }
+});
+
+const updateUserProfile = asyncHandler(async (req, res) => {
+  // 1. Get user ID from request
+  const userId = req.user?._id;
+
+  if (!userId) {
+    throw new ApiError(401, "Unauthorized access");
+  }
+
+  // 2. Get username and avatar file from request
+  const { username } = req.body;
+  const avatarFile = req.file;
+
+  try {
+    // 3. Find user by ID
+    const user = await User.findById(userId);
+    if (!user) {
+      throw new ApiError(404, "User not found");
+    }
+
+    let usernameChanged = false;
+    // 4. Handle username update if provided
+    if (username && username !== user.username) {
+      // Check uniqueness
+      const existingUser = await User.findOne({
+        username: username.toLowerCase(),
+      });
+      if (existingUser && existingUser._id.toString() !== userId.toString()) {
+        throw new ApiError(409, "Username already exists");
+      }
+      user.username = username.toLowerCase();
+      usernameChanged = true;
+    }
+
+    // 5. Handle avatar update if file provided
+    if (avatarFile) {
+      // Delete previous avatar from Cloudinary if it exists
+      if (user.avatar?.publicId) {
+        try {
+          await cloudinary.uploader.destroy(user.avatar.publicId);
+        } catch (error) {
+          throw new ApiError(500, "Failed to delete previous avatar");
+        }
+      }
+      // Save new avatar info from Multer/CloudinaryStorage
+      user.avatar = {
+        url: avatarFile.path,
+        publicId: avatarFile.filename,
+        localPath: "",
+      };
+    }
+
+    await user.save({ validateBeforeSave: false });
+
+    // 6. Prepare clean user object for response
+    const updatedUser = await User.findById(userId).select(
+      "-password -refreshToken -emailVerificationToken -emailVerificationTokenExpiry",
+    );
+    if (!updatedUser) {
+      throw new ApiError(404, "User not found");
+    }
+
+    return res.status(200).json(
+      new ApiResponse(200, "Profile updated successfully", {
+        user: {
+          _id: updatedUser._id,
+          username: updatedUser.username,
+          email: updatedUser.email,
+          avatar: updatedUser.avatar,
+          role: updatedUser.role,
+          isEmailVerified: updatedUser.isEmailVerified,
+          createdAt: updatedUser.createdAt,
+          updatedAt: updatedUser.updatedAt,
+        },
+      }),
+    );
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+    throw new ApiError(
+      error.statusCode || 500,
+      error.message || "Something went wrong while updating profile",
     );
   }
 });
@@ -680,6 +765,7 @@ export {
   loginUser,
   logoutUser,
   getUserProfile,
+  updateUserProfile,
   verifyEmail,
   forgotPassword,
   resetPassword,

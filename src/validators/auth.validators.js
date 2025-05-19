@@ -60,6 +60,18 @@ const emailVerificationValidator = () => {
   ];
 };
 
+const updateUserProfileValidator = () => {
+  return [
+    body("username")
+      .optional()
+      .isLength({ min: 3 })
+      .withMessage("Username must be at least 3 characters long")
+      .trim()
+      .isLength({ max: 30 })
+      .withMessage("Username must be at most 30 characters long"),
+  ];
+};
+
 const forgotPasswordValidator = () => {
   return [
     body("email")
@@ -130,6 +142,7 @@ export {
   userRegistrationValidator,
   userLoginValidator,
   emailVerificationValidator,
+  updateUserProfileValidator,
   forgotPasswordValidator,
   resetPasswordValidator,
   resendVerificationEmailValidator,

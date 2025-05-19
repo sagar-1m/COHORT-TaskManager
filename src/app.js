@@ -1,4 +1,5 @@
 import express from "express";
+import multer from "multer";
 import cookieParser from "cookie-parser";
 
 import path from "path";
@@ -33,6 +34,18 @@ app.use("/api/v1/notes", noteRouter);
 
 // Global error handler
 app.use((err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    // Multer-specific errors
+    return res
+      .status(400)
+      .json({ message: "Multer error", error: err.message });
+  }
+  if (err.message && err.message.toLowerCase().includes("cloudinary")) {
+    // Cloudinary-specific errors
+    return res
+      .status(500)
+      .json({ message: "Cloudinary error", error: err.message });
+  }
   if (err instanceof ApiError) {
     return res.status(err.statusCode).json({
       status: err.statusCode,

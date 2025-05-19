@@ -1,17 +1,14 @@
 import multer from "multer";
+import { CloudinaryStorage } from "multer-storage-cloudinary";
+import cloudinary, { uploadOptions } from "../utils/cloudinary.js";
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "./public/images");
-  },
-
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, file.fieldname + "-" + uniqueSuffix);
-  },
+// Cloudinary storage for avatar uploads
+const avatarStorage = new CloudinaryStorage({
+  cloudinary,
+  params: uploadOptions,
 });
 
-const fileFilter = (req, file, cb) => {
+const fileFilterAvatar = (req, file, cb) => {
   if (file.mimetype.startsWith("image/")) {
     cb(null, true);
   } else {
@@ -19,17 +16,11 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-export const upload = multer({
-  storage: storage,
+// Middleware for avatar uploads to Cloudinary
+export const uploadAvatar = multer({
+  storage: avatarStorage,
   limits: {
     fileSize: 1024 * 1024 * 5, // 5 MB
   },
-  fileFilter: fileFilter,
+  fileFilter: fileFilterAvatar,
 });
-
-// how to use it in a route
-// import { upload } from "../middlewares/multer.middlewares.js";
-
-// router.post("/upload", upload.single("image"),
-
-// router.post("/upload", upload.array("images", 10),

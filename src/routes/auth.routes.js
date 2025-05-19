@@ -9,6 +9,7 @@ import {
   registerUser,
   resendVerificationEmail,
   resetPassword,
+  updateUserProfile,
   verifyEmail,
 } from "../controllers/auth.controllers.js";
 import {
@@ -19,9 +20,11 @@ import {
   resetPasswordValidator,
   userLoginValidator,
   userRegistrationValidator,
+  updateUserProfileValidator,
 } from "../validators/auth.validators.js";
 import { validate } from "../middlewares/validator.middlewares.js";
 import { authMiddleware } from "../middlewares/auth.middlewares.js";
+import { uploadAvatar } from "../middlewares/multer.middlewares.js";
 
 const router = Router();
 
@@ -56,5 +59,15 @@ router.route("/refresh-token").post(refreshAccessToken);
 router
   .route("/delete-account")
   .delete(authMiddleware, deleteAccountValidator(), validate, deleteUser);
+
+router
+  .route("/update-profile")
+  .patch(
+    authMiddleware,
+    uploadAvatar.single("avatar"),
+    updateUserProfileValidator(),
+    validate,
+    updateUserProfile,
+  );
 
 export default router;
