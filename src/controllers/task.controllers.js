@@ -171,9 +171,9 @@ const getTasks = asyncHandler(async (req, res) => {
       .skip(skip)
       .limit(pageSize)
       .sort(sortOptions)
-      .populate("assignedTo", "name email")
-      .populate("createdBy", "name email")
-      .populate("updatedBy", "name email");
+      .populate("assignedTo", "username email")
+      .populate("createdBy", "username email")
+      .populate("updatedBy", "username email");
 
     // 10. Get the total count of tasks for pagination
     const totalTasks = await Task.countDocuments(query);
@@ -219,9 +219,9 @@ const getTaskById = asyncHandler(async (req, res) => {
       _id: taskId,
       projectId,
     })
-      .populate("assignedTo", "name email")
-      .populate("createdBy", "name email")
-      .populate("updatedBy", "name email");
+      .populate("assignedTo", "username email")
+      .populate("createdBy", "username email")
+      .populate("updatedBy", "username email");
 
     if (!task) {
       throw new ApiError(404, "Task not found");
@@ -385,9 +385,9 @@ const getBoardTasks = asyncHandler(async (req, res) => {
       .skip(skip)
       .limit(pageSize)
       .sort(sortOptions)
-      .populate("assignedTo", "name email")
-      .populate("createdBy", "name email")
-      .populate("updatedBy", "name email");
+      .populate("assignedTo", "username email")
+      .populate("createdBy", "username email")
+      .populate("updatedBy", "username email");
 
     // 11. Get the total count of tasks for pagination
     const totalTasks = await Task.countDocuments(query);
