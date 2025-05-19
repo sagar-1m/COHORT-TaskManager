@@ -317,6 +317,10 @@ const getProjects = asyncHandler(async (req, res) => {
     }).populate({
       path: "projectId",
       select: "name description status priority tags createdBy",
+      populate: {
+        path: "createdBy",
+        select: "username email avatar",
+      },
     });
 
     // 3. Check if the user is a member of any projects

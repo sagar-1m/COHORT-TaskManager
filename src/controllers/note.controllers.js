@@ -139,7 +139,7 @@ const getNotes = asyncHandler(async (req, res) => {
     const notes = await ProjectNote.find(query)
       .skip(skip)
       .limit(pageSize)
-      .populate("createdBy", "username email")
+      .populate("createdBy", "username email avatar")
       .sort({ createdAt: -1 });
 
     // 9. Get the total count of notes for pagination
@@ -193,7 +193,7 @@ const getNoteById = asyncHandler(async (req, res) => {
     // 5. Fetch the note from the database
     const note = await ProjectNote.findById(noteId).populate(
       "createdBy",
-      "username email",
+      "username email avatar",
     );
     if (!note || note.projectId.toString() !== projectId) {
       throw new ApiError(404, "Note not found in the project");
@@ -500,7 +500,7 @@ const searchNotes = asyncHandler(async (req, res) => {
     const notes = await ProjectNote.find(searchQuery)
       .skip(skip)
       .limit(pageSize)
-      .populate("createdBy", "username email")
+      .populate("createdBy", "username email avatar")
       .sort({ createdAt: -1 });
 
     // 10. Get the total count of notes for pagination

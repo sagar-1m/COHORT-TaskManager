@@ -105,7 +105,7 @@ const getAllBoards = asyncHandler(async (req, res) => {
       deleted: false, // Exclude deleted boards
     })
       .sort({ createdAt: -1 }) // Sort by creation date in descending order
-      .populate("createdBy", "username email"); // Populate the createdBy field with user details
+      .populate("createdBy", "username email avatar"); // Populate the createdBy field with user details
 
     // Fetch the tasks for each board
     const boardsWithTasks = await Promise.all(
@@ -114,9 +114,9 @@ const getAllBoards = asyncHandler(async (req, res) => {
           projectId,
           status: board.status,
         })
-          .populate("assignedTo", "username email")
-          .populate("createdBy", "username email")
-          .populate("updatedBy", "username email");
+          .populate("assignedTo", "username email avatar")
+          .populate("createdBy", "username email avatar")
+          .populate("updatedBy", "username email avatar");
 
         return {
           ...board.toObject(),
@@ -160,7 +160,7 @@ const getBoardById = asyncHandler(async (req, res) => {
       _id: boardId,
       projectId,
       deleted: false, // Exclude deleted boards
-    }).populate("createdBy", "username email"); // Populate the createdBy field with user details
+    }).populate("createdBy", "username email avatar"); // Populate the createdBy field with user details
     if (!board) {
       throw new ApiError(404, "Board not found");
     }
@@ -179,9 +179,9 @@ const getBoardById = asyncHandler(async (req, res) => {
       projectId,
       status: board.status,
     })
-      .populate("assignedTo", "username email")
-      .populate("createdBy", "username email")
-      .populate("updatedBy", "username email");
+      .populate("assignedTo", "username email avatar")
+      .populate("createdBy", "username email avatar")
+      .populate("updatedBy", "username email avatar");
 
     // 7. Return the board and its tasks in the response
     return res.status(200).json(

@@ -111,8 +111,8 @@ const getSubtaskById = asyncHandler(async (req, res) => {
       taskId,
       projectId,
     })
-      .populate("createdBy", "username email")
-      .populate("updatedBy", "username email");
+      .populate("createdBy", "username email avatar")
+      .populate("updatedBy", "username email avatar");
     if (!subtask) {
       throw new ApiError(404, "Subtask not found");
     }
@@ -352,8 +352,8 @@ const getAllSubtasksByTaskId = asyncHandler(async (req, res) => {
       .skip(skip)
       .limit(pageSize)
       .sort({ createdAt: -1 }) // Sort by creation date (newest first)
-      .populate("createdBy", "username email")
-      .populate("updatedBy", "username email");
+      .populate("createdBy", "username email avatar")
+      .populate("updatedBy", "username email avatar");
 
     // 10. Get the total count of subtasks for pagination info
     const totalSubtasks = await Subtask.countDocuments(query);
@@ -430,8 +430,8 @@ const getAllSubtasksByProjectId = asyncHandler(async (req, res) => {
       .skip(skip)
       .limit(pageSize)
       .sort({ createdAt: -1 }) // Sort by creation date (newest first)
-      .populate("createdBy", "username email")
-      .populate("updatedBy", "username email");
+      .populate("createdBy", "username email avatar")
+      .populate("updatedBy", "username email avatar");
 
     // 9. Get the total count of subtasks for pagination info
     const totalSubtasks = await Subtask.countDocuments(query);
