@@ -110,7 +110,6 @@ const getSubtaskById = asyncHandler(async (req, res) => {
       _id: subtaskId,
       taskId,
       projectId,
-      deleted: false,
     })
       .populate("createdBy", "username email avatar")
       .populate("updatedBy", "username email avatar");
@@ -174,7 +173,6 @@ const updateSubtask = asyncHandler(async (req, res) => {
       _id: subtaskId,
       taskId,
       projectId,
-      deleted: false,
     });
     if (!subtask) {
       throw new ApiError(404, "Subtask not found");
@@ -259,7 +257,6 @@ const deleteSubtask = asyncHandler(async (req, res) => {
       _id: subtaskId,
       taskId,
       projectId,
-      deleted: false,
     });
     if (!subtask) {
       throw new ApiError(404, "Subtask not found");
@@ -338,7 +335,6 @@ const getAllSubtasksByTaskId = asyncHandler(async (req, res) => {
     const query = {
       taskId,
       projectId,
-      deleted: false,
     };
     if (isCompleted !== undefined) {
       query.isCompleted = isCompleted === "true";
@@ -417,7 +413,6 @@ const getAllSubtasksByProjectId = asyncHandler(async (req, res) => {
     // 6. Build the query object for filtering subtasks
     const query = {
       projectId,
-      deleted: false,
     };
     if (isCompleted !== undefined) {
       query.isCompleted = isCompleted === "true";

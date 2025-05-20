@@ -130,7 +130,7 @@ const getTasks = asyncHandler(async (req, res) => {
     }
 
     // 6. Build the query object for filtering tasks
-    const query = { projectId, deleted: false }; // Exclude deleted tasks by default
+    const query = { projectId };
 
     if (status) {
       query.status = status;
@@ -218,7 +218,6 @@ const getTaskById = asyncHandler(async (req, res) => {
     const task = await Task.findOne({
       _id: taskId,
       projectId,
-      deleted: false, // Exclude deleted tasks
     })
       .populate("assignedTo", "username email avatar")
       .populate("createdBy", "username email avatar")
@@ -274,7 +273,6 @@ const assignTask = asyncHandler(async (req, res) => {
     const task = await Task.findOne({
       _id: taskId,
       projectId,
-      deleted: false, // Exclude deleted tasks
     });
     if (!task) {
       throw new ApiError(404, "Task not found");
@@ -362,9 +360,7 @@ const getBoardTasks = asyncHandler(async (req, res) => {
     const query = {
       projectId: board.projectId._id,
       status: board.status,
-      deleted: false,
-    }; // Exclude deleted tasks by default
-
+    };
     if (priority) {
       query.priority = priority;
     }
@@ -442,7 +438,6 @@ const updateTask = asyncHandler(async (req, res) => {
     const task = await Task.findOne({
       _id: taskId,
       projectId,
-      deleted: false, // Exclude deleted tasks
     });
     if (!task) {
       throw new ApiError(404, "Task not found");

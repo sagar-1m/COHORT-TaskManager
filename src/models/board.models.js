@@ -10,7 +10,6 @@ const boardSchema = new Schema(
       type: String,
       required: true,
       enum: AvailableBoardNames,
-      unique: true,
       trim: true,
     },
     projectId: {
