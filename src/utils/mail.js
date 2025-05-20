@@ -1,6 +1,8 @@
 import Mailgen from "mailgen";
 import nodemailer from "nodemailer";
 import { ApiError } from "../utils/api-error.js";
+import asyncRetry from "async-retry";
+import logger from "./logger.js";
 
 const sendMail = async (options) => {
   const mailGenerator = new Mailgen({
@@ -34,10 +36,37 @@ const sendMail = async (options) => {
   };
 
   try {
-    await transporter.sendMail(mailOptions);
-    console.log("Email sent successfully!");
+    await asyncRetry(
+      async (bail, attempt) => {
+        try {
+          await transporter.sendMail(mailOptions);
+          logger.info(
+            `Email sent successfully to ${options.email} (attempt ${attempt})`,
+          );
+        } catch (error) {
+          logger.error(`Email send attempt ${attempt} failed:`, error);
+          // Only bail (do not retry) on permanent errors (e.g., 5xx SMTP)
+          if (
+            error &&
+            error.responseCode &&
+            error.responseCode >= 500 &&
+            error.responseCode < 600
+          ) {
+            bail(error);
+            return;
+          }
+          throw error;
+        }
+      },
+      {
+        retries: 3, // 3 retry attempts
+        minTimeout: 1000, // 1s between retries
+        maxTimeout: 5000, // up to 5s between retries
+        factor: 2,
+      },
+    );
   } catch (error) {
-    console.error("Error sending email:", error);
+    logger.error("Error sending email after retries:", error);
     throw new ApiError(
       "There was an error sending the email. Please try again later.",
       500,

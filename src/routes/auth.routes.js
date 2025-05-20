@@ -25,6 +25,7 @@ import {
 import { validate } from "../middlewares/validator.middlewares.js";
 import { authMiddleware } from "../middlewares/auth.middlewares.js";
 import { uploadAvatar } from "../middlewares/multer.middlewares.js";
+import { emailLimiter } from "../middlewares/rateLimit.middlewares.js";
 
 const router = Router();
 
@@ -44,7 +45,7 @@ router.route("/profile").get(authMiddleware, getUserProfile);
 
 router
   .route("/forgot-password")
-  .post(forgotPasswordValidator(), validate, forgotPassword);
+  .post(emailLimiter, forgotPasswordValidator(), validate, forgotPassword);
 
 router
   .route("/reset-password/:token")
@@ -52,7 +53,12 @@ router
 
 router
   .route("/resend-verification-email")
-  .post(resendVerificationEmailValidator(), validate, resendVerificationEmail);
+  .post(
+    emailLimiter,
+    resendVerificationEmailValidator(),
+    validate,
+    resendVerificationEmail,
+  );
 
 router.route("/refresh-token").post(refreshAccessToken);
 

@@ -25,3 +25,17 @@ export const authLimiter = rateLimit({
     success: false,
   },
 });
+
+// Stricter rate limiter for email endpoints (e.g., password reset): 3 requests per hour per IP
+export const emailLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 3, // limit each IP to 3 requests per windowMs
+  message: {
+    status: 429,
+    message:
+      "Too many email requests from this IP, please try again after an hour.",
+    success: false,
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
