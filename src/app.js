@@ -4,6 +4,7 @@ import cookieParser from "cookie-parser";
 import helmet from "helmet";
 import cors from "cors";
 import morgan from "morgan";
+import swaggerUi from "swagger-ui-express";
 
 import path from "path";
 import { fileURLToPath } from "url";
@@ -21,6 +22,7 @@ import {
   apiLimiter,
   authLimiter,
 } from "./middlewares/rateLimit.middlewares.js";
+import swaggerSpec from "./utils/swagger.js";
 
 const app = express();
 
@@ -54,6 +56,9 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use("/public", express.static(path.join(__dirname, "../public")));
+
+// Swagger API docs (available at /api-docs)
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Apply global API rate limiter to all API routes
 app.use("/api/v1", apiLimiter);
