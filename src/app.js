@@ -1,6 +1,8 @@
 import express from "express";
 import multer from "multer";
 import cookieParser from "cookie-parser";
+import helmet from "helmet";
+import cors from "cors";
 
 import path from "path";
 import { fileURLToPath } from "url";
@@ -19,6 +21,20 @@ import {
 } from "./middlewares/rateLimit.middlewares.js";
 
 const app = express();
+
+// Security: Set HTTP headers
+app.use(helmet());
+
+// Security: Restrictive CORS policy (future-proofed for production)
+app.use(
+  cors({
+    origin: process.env.CORS_ORIGIN?.split(",") || [
+      "http://localhost:3000",
+      "http://127.0.0.1:3000",
+    ],
+    credentials: true, // allow cookies if needed
+  }),
+);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
