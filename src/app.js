@@ -3,6 +3,7 @@ import multer from "multer";
 import cookieParser from "cookie-parser";
 import helmet from "helmet";
 import cors from "cors";
+import morgan from "morgan";
 
 import path from "path";
 import { fileURLToPath } from "url";
@@ -15,6 +16,7 @@ import boardRouter from "./routes/board.routes.js";
 import subtaskRouter from "./routes/subtask.routes.js";
 import noteRouter from "./routes/note.routes.js";
 import { ApiError } from "./utils/api-error.js";
+import logger from "./utils/logger.js";
 import {
   apiLimiter,
   authLimiter,
@@ -33,6 +35,15 @@ app.use(
       "http://127.0.0.1:3000",
     ],
     credentials: true, // allow cookies if needed
+  }),
+);
+
+// Request logging middleware (colorful, concise)
+app.use(
+  morgan("dev", {
+    stream: {
+      write: (message) => logger.http(message.trim()),
+    },
   }),
 );
 
@@ -57,6 +68,7 @@ app.use("/api/v1/notes", noteRouter);
 
 // Global error handler
 app.use((err, req, res, next) => {
+  logger.error(err);
   if (err instanceof multer.MulterError) {
     // Multer-specific errors
     return res
