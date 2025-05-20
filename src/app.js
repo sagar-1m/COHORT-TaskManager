@@ -13,6 +13,10 @@ import boardRouter from "./routes/board.routes.js";
 import subtaskRouter from "./routes/subtask.routes.js";
 import noteRouter from "./routes/note.routes.js";
 import { ApiError } from "./utils/api-error.js";
+import {
+  apiLimiter,
+  authLimiter,
+} from "./middlewares/rateLimit.middlewares.js";
 
 const app = express();
 
@@ -24,8 +28,11 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use("/public", express.static(path.join(__dirname, "../public")));
 
+// Apply global API rate limiter to all API routes
+app.use("/api/v1", apiLimiter);
+
 app.use("/api/v1/healthcheck", healthCheckRouter);
-app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/auth", authLimiter, authRouter);
 app.use("/api/v1/projects", projectRouter);
 app.use("/api/v1/tasks", taskRouter);
 app.use("/api/v1/boards", boardRouter);
