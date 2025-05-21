@@ -11,7 +11,7 @@ export const authSwagger = {
           "application/json": {
             schema: {
               type: "object",
-              // required: ["username", "email", "password"], // <-- Intentionally commented out to break validation
+              required: ["username", "email", "password"],
               properties: {
                 username: { type: "string", minLength: 3, maxLength: 30 },
                 email: { type: "string", format: "email" },
