@@ -58,7 +58,9 @@ app.use(cookieParser());
 app.use("/public", express.static(path.join(__dirname, "../public")));
 
 // Swagger API docs (available at /api-docs)
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+if (process.env.NODE_ENV !== "production") {
+  app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+}
 
 // Apply global API rate limiter to all API routes
 app.use("/api/v1", apiLimiter);

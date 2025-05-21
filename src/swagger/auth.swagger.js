@@ -4,6 +4,7 @@ export const authSwagger = {
     post: {
       tags: ["Auth"],
       summary: "Register a new user",
+      security: [], // Public endpoint
       requestBody: {
         required: true,
         content: {
@@ -31,6 +32,7 @@ export const authSwagger = {
     post: {
       tags: ["Auth"],
       summary: "Login a user",
+      security: [], // Public endpoint
       requestBody: {
         required: true,
         content: {
@@ -57,7 +59,7 @@ export const authSwagger = {
     post: {
       tags: ["Auth"],
       summary: "Logout the current user",
-      security: [{ bearerAuth: [] }],
+      security: [{ bearerAuth: [] }], // Protected endpoint
       responses: {
         200: { description: "Logout successful" },
         401: { description: "Unauthorized" },
@@ -68,7 +70,7 @@ export const authSwagger = {
     get: {
       tags: ["Auth"],
       summary: "Get the current user's profile",
-      security: [{ bearerAuth: [] }],
+      security: [{ bearerAuth: [] }], // Protected endpoint
       responses: {
         200: {
           description: "User profile data",
@@ -109,6 +111,7 @@ export const authSwagger = {
     post: {
       tags: ["Auth"],
       summary: "Request a password reset email",
+      security: [], // Public endpoint
       requestBody: {
         required: true,
         content: {
@@ -134,6 +137,7 @@ export const authSwagger = {
     post: {
       tags: ["Auth"],
       summary: "Reset user password",
+      security: [], // Public endpoint
       parameters: [
         {
           in: "path",
@@ -167,6 +171,7 @@ export const authSwagger = {
     post: {
       tags: ["Auth"],
       summary: "Resend email verification link",
+      security: [], // Public endpoint
       requestBody: {
         required: true,
         content: {
@@ -191,6 +196,7 @@ export const authSwagger = {
     post: {
       tags: ["Auth"],
       summary: "Refresh access token",
+      security: [], // Public endpoint (no auth required to refresh)
       requestBody: {
         required: true,
         content: {
@@ -215,7 +221,7 @@ export const authSwagger = {
     delete: {
       tags: ["Auth"],
       summary: "Delete the current user's account",
-      security: [{ bearerAuth: [] }],
+      security: [{ bearerAuth: [] }], // Protected endpoint
       requestBody: {
         required: true,
         content: {
@@ -240,7 +246,7 @@ export const authSwagger = {
     patch: {
       tags: ["Auth"],
       summary: "Update the current user's profile",
-      security: [{ bearerAuth: [] }],
+      security: [{ bearerAuth: [] }], // Protected endpoint
       requestBody: {
         required: true,
         content: {
@@ -265,6 +271,7 @@ export const authSwagger = {
     get: {
       tags: ["Auth"],
       summary: "Verify user email",
+      security: [], // Public endpoint
       parameters: [
         {
           in: "path",
