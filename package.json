@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-    "swagger:lint": "node ./scripts/swagger-lint.js"
+    "swagger:lint": "node ./scripts/swagger-lint.js",
+    "export:swagger": "node ./scripts/export-swagger.js"
   },
   "keywords": [],
   "author": "",
