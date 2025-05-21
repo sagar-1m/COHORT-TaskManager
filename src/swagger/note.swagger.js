@@ -1,6 +1,6 @@
 // Note routes Swagger definitions (DRY, robust, secure)
 export const noteSwagger = {
-  "/api/v1/notes/{projectId}/{taskId}/create-note": {
+  "/api/v1/notes/{projectId}/create-note": {
     post: {
       tags: ["Notes"],
       summary: "Create a note for a project or task",
@@ -14,10 +14,11 @@ export const noteSwagger = {
           schema: { type: "string" },
         },
         {
-          in: "path",
+          in: "query",
           name: "taskId",
-          required: false,
           schema: { type: "string" },
+          description:
+            "Optional. If provided, creates a note for a specific task.",
         },
       ],
       requestBody: {
@@ -44,7 +45,7 @@ export const noteSwagger = {
       },
     },
   },
-  "/api/v1/notes/{projectId}/{taskId}/get-notes": {
+  "/api/v1/notes/{projectId}/get-notes": {
     get: {
       tags: ["Notes"],
       summary: "Get notes for a project or task (with filtering, pagination)",
@@ -58,10 +59,10 @@ export const noteSwagger = {
           schema: { type: "string" },
         },
         {
-          in: "path",
+          in: "query",
           name: "taskId",
-          required: false,
           schema: { type: "string" },
+          description: "Optional. Filter notes for a specific task.",
         },
         {
           in: "query",
@@ -80,7 +81,7 @@ export const noteSwagger = {
       },
     },
   },
-  "/api/v1/notes/{projectId}/{taskId}/get-note/{noteId}": {
+  "/api/v1/notes/{projectId}/get-note/{noteId}": {
     get: {
       tags: ["Notes"],
       summary: "Get a note by ID",
@@ -95,15 +96,16 @@ export const noteSwagger = {
         },
         {
           in: "path",
-          name: "taskId",
-          required: false,
-          schema: { type: "string" },
-        },
-        {
-          in: "path",
           name: "noteId",
           required: true,
           schema: { type: "string" },
+        },
+        {
+          in: "query",
+          name: "taskId",
+          schema: { type: "string" },
+          description:
+            "Optional. If provided, validates note belongs to this task.",
         },
       ],
       responses: {
@@ -118,7 +120,7 @@ export const noteSwagger = {
       },
     },
   },
-  "/api/v1/notes/{projectId}/{taskId}/update-note/{noteId}": {
+  "/api/v1/notes/{projectId}/update-note/{noteId}": {
     patch: {
       tags: ["Notes"],
       summary: "Update a note by ID",
@@ -133,15 +135,16 @@ export const noteSwagger = {
         },
         {
           in: "path",
-          name: "taskId",
-          required: false,
-          schema: { type: "string" },
-        },
-        {
-          in: "path",
           name: "noteId",
           required: true,
           schema: { type: "string" },
+        },
+        {
+          in: "query",
+          name: "taskId",
+          schema: { type: "string" },
+          description:
+            "Optional. If provided, validates note belongs to this task.",
         },
       ],
       requestBody: {
@@ -167,7 +170,7 @@ export const noteSwagger = {
       },
     },
   },
-  "/api/v1/notes/{projectId}/{taskId}/delete-note/{noteId}": {
+  "/api/v1/notes/{projectId}/delete-note/{noteId}": {
     delete: {
       tags: ["Notes"],
       summary: "Delete a note by ID (soft delete)",
@@ -182,15 +185,16 @@ export const noteSwagger = {
         },
         {
           in: "path",
-          name: "taskId",
-          required: false,
-          schema: { type: "string" },
-        },
-        {
-          in: "path",
           name: "noteId",
           required: true,
           schema: { type: "string" },
+        },
+        {
+          in: "query",
+          name: "taskId",
+          schema: { type: "string" },
+          description:
+            "Optional. If provided, validates note belongs to this task.",
         },
       ],
       responses: {
@@ -202,7 +206,7 @@ export const noteSwagger = {
       },
     },
   },
-  "/api/v1/notes/{projectId}/{taskId}/note-analytics": {
+  "/api/v1/notes/{projectId}/note-analytics": {
     get: {
       tags: ["Notes"],
       summary: "Get analytics for notes in a project or task",
@@ -216,9 +220,8 @@ export const noteSwagger = {
           schema: { type: "string" },
         },
         {
-          in: "path",
+          in: "query",
           name: "taskId",
-          required: false,
           schema: { type: "string" },
         },
         {
@@ -236,7 +239,7 @@ export const noteSwagger = {
       },
     },
   },
-  "/api/v1/notes/{projectId}/{taskId}/search-notes": {
+  "/api/v1/notes/{projectId}/search-notes": {
     get: {
       tags: ["Notes"],
       summary: "Search notes in a project or task",
@@ -250,9 +253,8 @@ export const noteSwagger = {
           schema: { type: "string" },
         },
         {
-          in: "path",
+          in: "query",
           name: "taskId",
-          required: false,
           schema: { type: "string" },
         },
         { in: "query", name: "query", schema: { type: "string" } },

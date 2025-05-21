@@ -222,20 +222,8 @@ export const authSwagger = {
       tags: ["Auth"],
       summary: "Delete the current user's account",
       security: [{ bearerAuth: [] }], // Protected endpoint
-      requestBody: {
-        required: true,
-        content: {
-          "application/json": {
-            schema: {
-              type: "object",
-              required: ["password"],
-              properties: {
-                password: { type: "string", minLength: 8 },
-              },
-            },
-          },
-        },
-      },
+      description:
+        "Deletes the authenticated user's account. Password must be provided as a query parameter or header for extra security.",
       responses: {
         200: { description: "Account deleted" },
         401: { description: "Unauthorized" },
